@@ -9,11 +9,12 @@ interface NavbarProps {
   onApply: () => void;
   onHome: () => void;
   onAdmin: () => void;
-  currentPage: 'home' | 'apply' | 'admin';
+  onDashboard: () => void;
+  currentPage: 'home' | 'apply' | 'admin' | 'dashboard' | 'forbidden';
   isAdmin: boolean;
 }
 
-export default function Navbar({ user, onSignOut, onSignIn, onApply, onHome, onAdmin, currentPage, isAdmin }: NavbarProps) {
+export default function Navbar({ user, onSignOut, onSignIn, onApply, onHome, onAdmin, onDashboard, currentPage, isAdmin }: NavbarProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -49,12 +50,19 @@ export default function Navbar({ user, onSignOut, onSignIn, onApply, onHome, onA
                     Apply Now
                   </button>
                 )}
-                {isAdmin && (
+                {isAdmin ? (
                   <button
                     onClick={onAdmin}
                     className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${currentPage === 'admin' ? 'text-[#22c55e]' : 'text-gray-600 hover:text-gray-900'}`}
                   >
-                    Dashboard
+                    Admin
+                  </button>
+                ) : (
+                  <button
+                    onClick={onDashboard}
+                    className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${currentPage === 'dashboard' ? 'text-[#22c55e]' : 'text-gray-600 hover:text-gray-900'}`}
+                  >
+                    My Account
                   </button>
                 )}
                 <button
@@ -101,12 +109,19 @@ export default function Navbar({ user, onSignOut, onSignIn, onApply, onHome, onA
                     Apply Now
                   </button>
                 )}
-                {isAdmin && (
+                {isAdmin ? (
                   <button
                     onClick={() => { onAdmin(); setOpen(false); }}
                     className={`text-sm font-medium px-3 flex items-center gap-1.5 text-left ${currentPage === 'admin' ? 'text-[#22c55e]' : 'text-gray-600 hover:text-gray-900'}`}
                   >
-                    Dashboard
+                    Admin
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { onDashboard(); setOpen(false); }}
+                    className={`text-sm font-medium px-3 flex items-center gap-1.5 text-left ${currentPage === 'dashboard' ? 'text-[#22c55e]' : 'text-gray-600 hover:text-gray-900'}`}
+                  >
+                    My Account
                   </button>
                 )}
                 <button

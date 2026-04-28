@@ -1,9 +1,6 @@
 -- Philani Finance Admin Dashboard Schema
 -- Run this in your Supabase SQL Editor
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- Profiles table (extends auth.users with role)
 CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
@@ -13,7 +10,7 @@ CREATE TABLE public.profiles (
 
 -- Loan applications table (production-ready)
 CREATE TABLE public.loan_applications (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
 
   -- Personal details
@@ -53,7 +50,7 @@ CREATE TABLE public.loan_applications (
 
 -- Application documents table
 CREATE TABLE public.application_documents (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   application_id UUID REFERENCES public.loan_applications ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   category TEXT NOT NULL CHECK (category IN ('payslip', 'bank_statement', 'id_copy')),
@@ -66,7 +63,7 @@ CREATE TABLE public.application_documents (
 
 -- Audit logs table
 CREATE TABLE public.audit_logs (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   actor_id UUID REFERENCES auth.users NOT NULL,
   action TEXT NOT NULL,
   target_type TEXT NOT NULL,
@@ -168,17 +165,7 @@ CREATE POLICY "Authenticated can insert audit logs"
   WITH CHECK (auth.uid() = actor_id);
 
 -- Storage bucket RLS for loan_documents
--- (Run in Supabase Dashboard -> Storage -> Policies)
--- Policy: Admins can select all objects in loan_documents bucket
--- CREATE POLICY "Admins can read all loan documents"
---   ON storage.objects FOR SELECT
---   USING (
---     bucket_id = 'loan_documents' AND
---     EXISTS (
---       SELECT 1 FROM public.profiles
---       WHERE id = auth.uid() AND role IN ('admin', 'owner')
---     )
---   );
+-- See: 002_storage_policies.sql (must be run separately)
 
 -- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()

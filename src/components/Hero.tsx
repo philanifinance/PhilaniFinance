@@ -6,9 +6,10 @@ interface HeroProps {
   isAuthenticated: boolean;
   onRequestAuth: () => void;
   onApply: () => void;
+  onApplyWithParams?: (amount: number, days: number) => void;
 }
 
-export default function Hero({ isAuthenticated, onRequestAuth, onApply }: HeroProps) {
+export default function Hero({ isAuthenticated, onRequestAuth, onApply, onApplyWithParams }: HeroProps) {
   const [amount, setAmount] = useState(2000);
   const [days, setDays] = useState(14);
 
@@ -119,7 +120,7 @@ export default function Hero({ isAuthenticated, onRequestAuth, onApply }: HeroPr
 
             {isAuthenticated ? (
               <button
-                onClick={onApply}
+                onClick={() => onApplyWithParams ? onApplyWithParams(amount, days) : onApply()}
                 className="w-full bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-lg hover:shadow-green-500/30 hover:-translate-y-0.5"
               >
                 Apply for {formatCurrency(amount)}

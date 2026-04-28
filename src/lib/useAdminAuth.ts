@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from './supabase';
 
+export type UserRole = 'user' | 'admin' | 'owner' | null;
+
 export function useAdminAuth() {
-  const { user, isAuthenticated } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const auth = useAuth();
+  const { user } = auth;
+  const [role, setRole] = useState<UserRole>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -13,8 +16,8 @@ export function useAdminAuth() {
     async function checkRole() {
       if (!user) {
         if (!cancelled) {
-          setIsAdmin(false);
-          setLoading(false);
+          setRole(null);
+          setRoleLoading(false);
         }
         return;
       }
@@ -26,10 +29,12 @@ export function useAdminAuth() {
         .single();
 
       if (!cancelled) {
-        setIsAdmin(
-          !error && (data?.role === 'admin' || data?.role === 'owner')
-        );
-        setLoading(false);
+        if (!error && data?.role) {
+          setRole(data.role as UserRole);
+        } else {
+          setRole('user');
+        }
+        setRoleLoading(false);
       }
     }
 
@@ -37,5 +42,15 @@ export function useAdminAuth() {
     return () => { cancelled = true; };
   }, [user]);
 
-  return { isAdmin, isAuthenticated, user, loading };
+  const isAdmin = role === 'admin' || role === 'owner';
+  const isOwner = role === 'owner';
+
+  return {
+    ...auth,
+    role,
+    isAdmin,
+    isOwner,
+    roleLoading,
+    loading: auth.loading || roleLoading,
+  };
 }

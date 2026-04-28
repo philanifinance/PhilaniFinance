@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import TrustBar from './components/TrustBar';
@@ -8,15 +8,62 @@ import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import AdminDashboard from './components/AdminDashboard';
-import { useAuth } from './lib/useAuth';
+import ClientDashboard from './components/ClientDashboard';
+import ForbiddenPage from './components/ForbiddenPage';
+import ToastContainer, { type ToastMessage } from './components/Toast';
 import { useAdminAuth } from './lib/useAdminAuth';
+import { ProfileProvider } from './lib/ProfileContext';
 
-export default function App() {
-  const { user, loading, signIn, signUp, signOut, isAuthenticated } = useAuth();
+type Page = 'home' | 'apply' | 'admin' | 'dashboard' | 'forbidden';
+
+function AppInner() {
+  const {
+    user, loading, signIn, signUp, signOut,
+    isAuthenticated, isAdmin, role,
+  } = useAdminAuth();
+
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authDefaultMode, setAuthDefaultMode] = useState<'login' | 'signup'>('login');
-  const [currentPage, setCurrentPage] = useState<'home' | 'apply' | 'admin'>('home');
-  const { isAdmin } = useAdminAuth();
+  const [currentPage, setCurrentPage] = useState<Page>('home');
+
+  // Loan parameters selected from Hero calculator
+  const [loanAmount, setLoanAmount] = useState(2000);
+  const [loanTermDays, setLoanTermDays] = useState(14);
+
+  // Toast notifications
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const addToast = useCallback((t: Omit<ToastMessage, 'id'>) => {
+    setToasts(prev => [...prev, { ...t, id: `t-${Date.now()}-${Math.random()}` }]);
+  }, []);
+  const dismissToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // Show welcome banner on client dashboard after submission
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // Track whether the user just authenticated (for post-login redirect)
+  const prevAuthRef = useRef(isAuthenticated);
+
+  // ── Post-Login Guard ──────────────────────────────────────────────
+  useEffect(() => {
+    const wasAuth = prevAuthRef.current;
+    prevAuthRef.current = isAuthenticated;
+
+    if (!wasAuth && isAuthenticated && role) {
+      if (role === 'owner' || role === 'admin') {
+        setCurrentPage('admin');
+      } else {
+        setCurrentPage('dashboard');
+      }
+      setAuthModalOpen(false);
+      window.scrollTo(0, 0);
+    }
+
+    if (wasAuth && !isAuthenticated) {
+      setCurrentPage('home');
+    }
+  }, [isAuthenticated, role]);
 
   const openAuthModal = useCallback((mode: 'login' | 'signup' = 'login') => {
     setAuthDefaultMode(mode);
@@ -38,15 +85,38 @@ export default function App() {
   }, []);
 
   const goToAdmin = useCallback(() => {
+    if (!isAdmin) {
+      setCurrentPage('forbidden');
+      return;
+    }
     setCurrentPage('admin');
+    window.scrollTo(0, 0);
+  }, [isAdmin]);
+
+  const goToDashboard = useCallback(() => {
+    setCurrentPage('dashboard');
     window.scrollTo(0, 0);
   }, []);
 
   const handleAuthSuccess = useCallback(() => {
     closeAuthModal();
-    goToApply();
-  }, [closeAuthModal, goToApply]);
+  }, [closeAuthModal]);
 
+  // Post-submission redirect: go to client dashboard with welcome banner
+  const handleSubmitSuccess = useCallback(() => {
+    setShowWelcome(true);
+    setCurrentPage('dashboard');
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Callback from Hero to pass loan params before navigating to apply
+  const handleApplyFromHero = useCallback((amount: number, days: number) => {
+    setLoanAmount(amount);
+    setLoanTermDays(days);
+    goToApply();
+  }, [goToApply]);
+
+  // ── Loading screen ─────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
@@ -55,117 +125,103 @@ export default function App() {
     );
   }
 
+  // ── 403 Forbidden ──────────────────────────────────────────────────
+  if (currentPage === 'forbidden') {
+    return <ForbiddenPage onGoHome={goHome} onGoBack={goHome} />;
+  }
+
+  // ── Protected Admin Route ──────────────────────────────────────────
+  if (currentPage === 'admin') {
+    if (!isAuthenticated) {
+      return (
+        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+          <AuthModal isOpen={true} onClose={goHome} onLogin={signIn} onSignUp={signUp} defaultMode="login" onSuccess={handleAuthSuccess} />
+        </div>
+      );
+    }
+    if (!isAdmin) {
+      return <ForbiddenPage onGoHome={goHome} onGoBack={goHome} />;
+    }
+    return (
+      <div className="font-sans antialiased min-h-screen bg-[#f8fafc]">
+        <Navbar user={user} onSignOut={signOut} onSignIn={() => openAuthModal('login')} onApply={goToApply} onHome={goHome} currentPage={currentPage} isAdmin={isAdmin} onAdmin={goToAdmin} onDashboard={goToDashboard} />
+        <main className="pt-20"><AdminDashboard /></main>
+        <Footer />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </div>
+    );
+  }
+
+  // ── Client Dashboard ───────────────────────────────────────────────
+  if (currentPage === 'dashboard') {
+    if (!isAuthenticated || !user) {
+      return (
+        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+          <AuthModal isOpen={true} onClose={goHome} onLogin={signIn} onSignUp={signUp} defaultMode="login" onSuccess={handleAuthSuccess} />
+        </div>
+      );
+    }
+    return (
+      <div className="font-sans antialiased min-h-screen bg-[#f8fafc]">
+        <Navbar user={user} onSignOut={signOut} onSignIn={() => openAuthModal('login')} onApply={goToApply} onHome={goHome} currentPage={currentPage} isAdmin={isAdmin} onAdmin={goToAdmin} onDashboard={goToDashboard} />
+        <main className="pt-20">
+          <ClientDashboard user={user} onApply={goToApply} showWelcome={showWelcome} onWelcomeDismiss={() => setShowWelcome(false)} />
+        </main>
+        <Footer />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </div>
+    );
+  }
+
+  // ── Client Apply Page ──────────────────────────────────────────────
   if (currentPage === 'apply') {
     return (
       <div className="font-sans antialiased min-h-screen bg-[#f8fafc]">
-        <Navbar
-          user={user}
-          onSignOut={signOut}
-          onSignIn={() => openAuthModal('login')}
-          onApply={goToApply}
-          onHome={goHome}
-          currentPage={currentPage}
-          isAdmin={isAdmin}
-          onAdmin={goToAdmin}
-        />
+        <Navbar user={user} onSignOut={signOut} onSignIn={() => openAuthModal('login')} onApply={goToApply} onHome={goHome} currentPage={currentPage} isAdmin={isAdmin} onAdmin={goToAdmin} onDashboard={goToDashboard} />
         <main className="pt-20 pb-10">
           <ApplicationForm
             isAuthenticated={isAuthenticated}
             onRequestAuth={() => openAuthModal('login')}
             user={user}
             onBack={goHome}
+            loanAmount={loanAmount}
+            loanTermDays={loanTermDays}
+            onSubmitSuccess={handleSubmitSuccess}
+            addToast={addToast}
           />
         </main>
         <Footer />
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={closeAuthModal}
-          onLogin={signIn}
-          onSignUp={signUp}
-          defaultMode={authDefaultMode}
-          onSuccess={handleAuthSuccess}
-        />
+        <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} onLogin={signIn} onSignUp={signUp} defaultMode={authDefaultMode} onSuccess={handleAuthSuccess} />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
     );
   }
 
-  if (currentPage === 'admin') {
-    if (!isAdmin) {
-      return (
-        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-              🔒
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
-            <p className="text-gray-500 text-sm mb-4">You do not have permission to access the admin dashboard.</p>
-            <button
-              onClick={goHome}
-              className="bg-[#22c55e] hover:bg-[#16a34a] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors"
-            >
-              Go Home
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="font-sans antialiased min-h-screen bg-[#f8fafc]">
-        <Navbar
-          user={user}
-          onSignOut={signOut}
-          onSignIn={() => openAuthModal('login')}
-          onApply={goToApply}
-          onHome={goHome}
-          currentPage={currentPage}
-          isAdmin={isAdmin}
-          onAdmin={goToAdmin}
-        />
-        <main className="pt-20 pb-10">
-          <AdminDashboard />
-        </main>
-        <Footer />
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={closeAuthModal}
-          onLogin={signIn}
-          onSignUp={signUp}
-          defaultMode={authDefaultMode}
-          onSuccess={closeAuthModal}
-        />
-      </div>
-    );
-  }
-
+  // ── Landing Page ───────────────────────────────────────────────────
   return (
     <div className="font-sans antialiased">
-      <Navbar
-        user={user}
-        onSignOut={signOut}
-        onSignIn={() => openAuthModal('login')}
-        onApply={goToApply}
-        onHome={goHome}
-        currentPage={currentPage}
-        isAdmin={isAdmin}
-        onAdmin={goToAdmin}
-      />
+      <Navbar user={user} onSignOut={signOut} onSignIn={() => openAuthModal('login')} onApply={goToApply} onHome={goHome} currentPage={currentPage} isAdmin={isAdmin} onAdmin={goToAdmin} onDashboard={goToDashboard} />
       <Hero
         isAuthenticated={isAuthenticated}
         onRequestAuth={() => openAuthModal('login')}
         onApply={goToApply}
+        onApplyWithParams={handleApplyFromHero}
       />
       <TrustBar />
       <HowItWorks />
       <FAQ />
       <Footer />
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={closeAuthModal}
-        onLogin={signIn}
-        onSignUp={signUp}
-        defaultMode={authDefaultMode}
-        onSuccess={handleAuthSuccess}
-      />
+      <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} onLogin={signIn} onSignUp={signUp} defaultMode={authDefaultMode} onSuccess={handleAuthSuccess} />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
+  );
+}
+
+export default function App() {
+  const { user } = useAdminAuth();
+  return (
+    <ProfileProvider user={user}>
+      <AppInner />
+    </ProfileProvider>
   );
 }

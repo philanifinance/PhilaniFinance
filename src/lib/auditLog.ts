@@ -6,7 +6,10 @@ export type AuditAction =
   | 'updated_status'
   | 'approved_application'
   | 'rejected_application'
-  | 'added_note';
+  | 'added_note'
+  | 'debicheck_initiated'
+  | 'debicheck_error'
+  | 'debicheck_callback';
 
 export async function logAudit(
   action: AuditAction,
