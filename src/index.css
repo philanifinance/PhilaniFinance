@@ -3,34 +3,103 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     font-family: 'Inter', system-ui, sans-serif;
     background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── Range Slider ──────────────────────────────────── */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(to right, #22c55e var(--range-pct, 50%), #e2e8f0 var(--range-pct, 50%));
+    outline: none;
   }
 
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    height: 20px;
-    width: 20px;
+    height: 22px;
+    width: 22px;
     border-radius: 50%;
-    background: #22c55e;
-    border: 3px solid #f8fafc;
-    box-shadow: 0 0 0 2px #22c55e;
+    background: #ffffff;
+    border: 3px solid #22c55e;
+    box-shadow: 0 2px 8px rgba(34,197,94,0.3);
     cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 2px 16px rgba(34,197,94,0.45);
+    transform: scale(1.1);
   }
 
   input[type="range"]::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
+    height: 22px;
+    width: 22px;
     border-radius: 50%;
-    background: #22c55e;
-    border: 3px solid #f8fafc;
-    box-shadow: 0 0 0 2px #22c55e;
+    background: #ffffff;
+    border: 3px solid #22c55e;
+    box-shadow: 0 2px 8px rgba(34,197,94,0.3);
     cursor: pointer;
   }
+}
 
-  html {
-    scroll-behavior: smooth;
+/* ── Scroll-triggered animations ─────────────────────── */
+@layer utilities {
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1),
+                transform 0.7s cubic-bezier(0.16,1,0.3,1);
   }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-left {
+    opacity: 0;
+    transform: translateX(-40px);
+    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1),
+                transform 0.7s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal-left.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .reveal-right {
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1),
+                transform 0.7s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal-right.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .reveal-scale {
+    opacity: 0;
+    transform: scale(0.92);
+    transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1),
+                transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal-scale.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Stagger delay utilities */
+  .delay-100 { transition-delay: 100ms; }
+  .delay-200 { transition-delay: 200ms; }
+  .delay-300 { transition-delay: 300ms; }
+  .delay-400 { transition-delay: 400ms; }
+  .delay-500 { transition-delay: 500ms; }
+  .delay-600 { transition-delay: 600ms; }
 }

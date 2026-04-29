@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useReveal } from '../lib/useReveal';
 
 const faqs = [
   {
@@ -32,36 +33,66 @@ const faqs = [
   },
 ];
 
-export default function FAQ() {
-  const [open, setOpen] = useState<number | null>(null);
+function AccordionItem({ item, isOpen, onToggle }: { item: typeof faqs[number]; isOpen: boolean; onToggle: () => void }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setHeight(isOpen ? contentRef.current.scrollHeight : 0);
+    }
+  }, [isOpen]);
 
   return (
-    <section id="faq" className="bg-[#f8fafc] py-20">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <span className="text-[#22c55e] text-sm font-semibold uppercase tracking-wider">Got Questions?</span>
-          <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mt-2">Frequently Asked Questions</h2>
+    <div className={`rounded-2xl border transition-all duration-300 ${isOpen ? 'border-brand-200 bg-white shadow-md shadow-brand-500/[0.06]' : 'border-gray-100 bg-white hover:border-gray-200 shadow-sm'}`}>
+      <button
+        className="w-full flex items-center justify-between px-6 py-5 text-left gap-4"
+        onClick={onToggle}
+      >
+        <span className={`font-display font-semibold text-sm leading-snug transition-colors duration-200 ${isOpen ? 'text-brand-700' : 'text-navy-800'}`}>
+          {item.q}
+        </span>
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isOpen ? 'bg-brand-500 rotate-180' : 'bg-navy-50'}`}>
+          <ChevronDown className={`w-4 h-4 transition-colors duration-200 ${isOpen ? 'text-white' : 'text-navy-500'}`} />
+        </div>
+      </button>
+      <div
+        style={{ maxHeight: height }}
+        className="overflow-hidden transition-all duration-300 ease-out"
+      >
+        <div ref={contentRef} className="px-6 pb-5">
+          <p className="text-navy-500 text-sm leading-relaxed">{item.a}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function FAQ() {
+  const [open, setOpen] = useState<number | null>(null);
+  const sectionRef = useReveal();
+
+  return (
+    <section id="faq" className="bg-gradient-to-b from-white to-slate-50 py-24">
+      <div ref={sectionRef} className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14 reveal">
+          <span className="inline-block text-brand-600 text-xs font-bold uppercase tracking-[0.2em] mb-3">Got Questions?</span>
+          <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-navy-900 tracking-tight">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-navy-500 mt-4 max-w-lg mx-auto leading-relaxed">
+            Everything you need to know about borrowing with Philani Finance.
+          </p>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 reveal delay-200">
           {faqs.map((item, idx) => (
-            <div
+            <AccordionItem
               key={idx}
-              className={`border rounded-xl overflow-hidden transition-all duration-300 shadow-sm ${open === idx ? 'border-[#22c55e]/40 bg-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}
-            >
-              <button
-                className="w-full flex items-center justify-between px-6 py-4 text-left gap-4"
-                onClick={() => setOpen(open === idx ? null : idx)}
-              >
-                <span className="text-gray-900 font-semibold text-sm leading-snug">{item.q}</span>
-                <ChevronDown className={`w-5 h-5 text-[#22c55e] flex-shrink-0 transition-transform duration-300 ${open === idx ? 'rotate-180' : ''}`} />
-              </button>
-              {open === idx && (
-                <div className="px-6 pb-5">
-                  <p className="text-gray-600 text-sm leading-relaxed">{item.a}</p>
-                </div>
-              )}
-            </div>
+              item={item}
+              isOpen={open === idx}
+              onToggle={() => setOpen(open === idx ? null : idx)}
+            />
           ))}
         </div>
       </div>

@@ -5,6 +5,7 @@ import TrustBar from './components/TrustBar';
 import HowItWorks from './components/HowItWorks';
 import ApplicationForm from './components/ApplicationForm';
 import FAQ from './components/FAQ';
+import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import AdminDashboard from './components/AdminDashboard';
@@ -19,7 +20,7 @@ type Page = 'home' | 'apply' | 'admin' | 'dashboard' | 'forbidden';
 function AppInner() {
   const {
     user, loading, signIn, signUp, signOut,
-    isAuthenticated, isAdmin, role,
+    isAuthenticated, isAdmin, isOwner, role,
   } = useAdminAuth();
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -145,7 +146,7 @@ function AppInner() {
     return (
       <div className="font-sans antialiased min-h-screen bg-[#f8fafc]">
         <Navbar user={user} onSignOut={signOut} onSignIn={() => openAuthModal('login')} onApply={goToApply} onHome={goHome} currentPage={currentPage} isAdmin={isAdmin} onAdmin={goToAdmin} onDashboard={goToDashboard} />
-        <main className="pt-20"><AdminDashboard /></main>
+        <main className="pt-20"><AdminDashboard isOwner={isOwner} /></main>
         <Footer />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
@@ -210,6 +211,7 @@ function AppInner() {
       <TrustBar />
       <HowItWorks />
       <FAQ />
+      <CtaBanner isAuthenticated={isAuthenticated} onApply={goToApply} onRequestAuth={() => openAuthModal('login')} />
       <Footer />
       <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} onLogin={signIn} onSignUp={signUp} defaultMode={authDefaultMode} onSuccess={handleAuthSuccess} />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

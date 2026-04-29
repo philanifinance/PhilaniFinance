@@ -108,6 +108,10 @@ export default function ApplicationForm({
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [submitPhase, setSubmitPhase] = useState('');
 
+  // Credit bureau consent
+  const [creditConsent, setCreditConsent] = useState(false);
+  const [creditConsentAt, setCreditConsentAt] = useState<string | null>(null);
+
   // Ozow hybrid bank statement state
   const [bankStatementMode, setBankStatementMode] = useState<'choose' | 'ozow' | 'manual'>('choose');
   const [ozowLoading, setOzowLoading] = useState(false);
@@ -230,7 +234,7 @@ export default function ApplicationForm({
       const bankStmtCat = docs.find(d => d.id === 'bank_statements');
       const bankStatementsOk = ozowComplete || (bankStmtCat ? bankStmtCat.files.length >= bankStmtCat.requiredCount : false);
       const otherDocs = docs.filter(d => d.id !== 'bank_statements');
-      return bankStatementsOk && otherDocs.every(d => d.files.length >= d.requiredCount);
+      return bankStatementsOk && otherDocs.every(d => d.files.length >= d.requiredCount) && creditConsent;
     }
     return false;
   }
@@ -446,6 +450,8 @@ export default function ApplicationForm({
       bank_name: form.bankName,
       account_number: form.accountNumber.trim(),
       account_type: form.accountType,
+      credit_consent_given: creditConsent,
+      credit_consent_at: creditConsentAt,
     }).select('id').single();
 
     if (dbError || !insertedApp) {
@@ -770,6 +776,44 @@ export default function ApplicationForm({
                   {uploadProgress}
                 </div>
               )}
+
+              {/* ── Credit Bureau Consent ─────────────────────────── */}
+              <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-5">
+                <div className="flex items-start gap-3">
+                  <div className="pt-0.5">
+                    <input
+                      type="checkbox"
+                      id="credit-consent"
+                      checked={creditConsent}
+                      onChange={e => {
+                        setCreditConsent(e.target.checked);
+                        setCreditConsentAt(e.target.checked ? new Date().toISOString() : null);
+                      }}
+                      className="w-4 h-4 rounded border-gray-300 text-[#22c55e] focus:ring-[#22c55e] cursor-pointer"
+                    />
+                  </div>
+                  <label htmlFor="credit-consent" className="cursor-pointer">
+                    <span className="text-gray-900 text-sm font-semibold block mb-1">Credit &amp; Identity Check Consent</span>
+                    <span className="text-gray-600 text-xs leading-relaxed block">
+                      I hereby consent to Philani Finance (Pty) Ltd performing a credit bureau enquiry and identity
+                      verification through a registered credit bureau (e.g. Experian, TransUnion, or Compuscan)
+                      for the purpose of assessing my loan application. I understand that:
+                    </span>
+                    <ul className="text-gray-500 text-xs mt-2 space-y-1 list-disc list-inside">
+                      <li>My credit profile, including credit score and payment history, will be retrieved.</li>
+                      <li>My identity will be verified against Department of Home Affairs records.</li>
+                      <li>Only a summary of the results will be stored; the full report will not be retained.</li>
+                      <li>This consent is given in compliance with the Protection of Personal Information Act (POPIA).</li>
+                    </ul>
+                  </label>
+                </div>
+                {creditConsent && creditConsentAt && (
+                  <p className="text-[10px] text-amber-600 mt-3 ml-7 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    Consent recorded at {new Date(creditConsentAt).toLocaleString('en-ZA')}
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

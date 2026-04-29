@@ -9,7 +9,9 @@ export type AuditAction =
   | 'added_note'
   | 'debicheck_initiated'
   | 'debicheck_error'
-  | 'debicheck_callback';
+  | 'debicheck_callback'
+  | 'credit_check_performed'
+  | 'credit_check_error';
 
 export async function logAudit(
   action: AuditAction,
