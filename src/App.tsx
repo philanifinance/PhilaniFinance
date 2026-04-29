@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import TrustBar from './components/TrustBar';
@@ -128,7 +129,12 @@ function AppInner() {
 
   // ── 403 Forbidden ──────────────────────────────────────────────────
   if (currentPage === 'forbidden') {
-    return <ForbiddenPage onGoHome={goHome} onGoBack={goHome} />;
+    return (
+      <>
+        <ForbiddenPage onGoHome={goHome} onGoBack={goHome} />
+        <SpeedInsights />
+      </>
+    );
   }
 
   // ── Protected Admin Route ──────────────────────────────────────────
@@ -149,6 +155,7 @@ function AppInner() {
         <main className="pt-20"><AdminDashboard isOwner={isOwner} /></main>
         <Footer />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+        <SpeedInsights />
       </div>
     );
   }
@@ -170,6 +177,7 @@ function AppInner() {
         </main>
         <Footer />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+        <SpeedInsights />
       </div>
     );
   }
@@ -194,6 +202,7 @@ function AppInner() {
         <Footer />
         <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} onLogin={signIn} onSignUp={signUp} defaultMode={authDefaultMode} onSuccess={handleAuthSuccess} />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+        <SpeedInsights />
       </div>
     );
   }
@@ -215,6 +224,7 @@ function AppInner() {
       <Footer />
       <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} onLogin={signIn} onSignUp={signUp} defaultMode={authDefaultMode} onSuccess={handleAuthSuccess} />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      <SpeedInsights />
     </div>
   );
 }
