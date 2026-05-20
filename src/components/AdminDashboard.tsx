@@ -190,13 +190,31 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
 
   // ── Stats ──────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const total = applications.length;
-    const pending = applications.filter(a => a.status === 'pending').length;
-    const reviewing = applications.filter(a => a.status === 'under_review').length;
-    const approved = applications.filter(a => a.status === 'approved').length;
-    const rejected = applications.filter(a => a.status === 'rejected').length;
-    const totalValue = applications.filter(a => a.status !== 'rejected').reduce((sum, a) => sum + a.loan_amount, 0);
-    return { total, pending, reviewing, approved, rejected, totalValue };
+    const total      = applications.length;
+    const pending    = applications.filter(a => a.status === 'pending').length;
+    const reviewing  = applications.filter(a => a.status === 'under_review').length;
+    const approved   = applications.filter(a => a.status === 'approved').length;
+    const rejected   = applications.filter(a => a.status === 'rejected').length;
+    const disbursed  = applications.filter(a => a.loan_lifecycle === 'disbursed').length;
+    const repaid     = applications.filter(a => a.loan_lifecycle === 'repaid').length;
+    const totalValue       = applications.filter(a => a.status !== 'rejected').reduce((s, a) => s + a.loan_amount, 0);
+    const activeLoanValue  = applications.filter(a => a.loan_lifecycle === 'disbursed').reduce((s, a) => s + a.total_repayable, 0);
+    const repaidValue      = applications.filter(a => a.loan_lifecycle === 'repaid').reduce((s, a) => s + a.total_repayable, 0);
+    const approvalRate     = total > 0 ? Math.round((approved / total) * 100) : 0;
+    const avgLoan          = (total - rejected) > 0 ? Math.round(totalValue / (total - rejected)) : 0;
+    const now = Date.now();
+    const last30 = applications.filter(a => new Date(a.created_at).getTime() > now - 30 * 24 * 60 * 60 * 1000).length;
+    const last7  = applications.filter(a => new Date(a.created_at).getTime() > now -  7 * 24 * 60 * 60 * 1000).length;
+    const months: { label: string; count: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(); d.setMonth(d.getMonth() - i);
+      const yr = d.getFullYear(); const mo = d.getMonth();
+      months.push({
+        label: d.toLocaleString('en-ZA', { month: 'short' }),
+        count: applications.filter(a => { const x = new Date(a.created_at); return x.getFullYear() === yr && x.getMonth() === mo; }).length,
+      });
+    }
+    return { total, pending, reviewing, approved, rejected, disbursed, repaid, totalValue, activeLoanValue, repaidValue, approvalRate, avgLoan, last30, last7, months };
   }, [applications]);
 
   // ── Filtered list ──────────────────────────────────────────────────
@@ -576,46 +594,48 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
     };
 
     return (
-      <div className="bg-[#f8fafc] pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          {/* Breadcrumb header */}
-          <div className="flex items-center justify-between mb-6">
-            <button onClick={backToQueue}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
-              <ArrowLeft className="w-4 h-4" /> All Applications
-            </button>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[selectedApp.status].bg} ${statusConfig[selectedApp.status].color}`}>
-              {statusConfig[selectedApp.status].label}
-            </span>
-          </div>
-
-          {/* Applicant header card */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-slate-50 pb-16">
+        {/* Dark navy header */}
+        <div className="bg-navy-950 pt-20 pb-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-between mb-6">
+              <button onClick={backToQueue}
+                className="flex items-center gap-2 text-white/40 hover:text-white text-sm font-medium transition-colors">
+                <ArrowLeft className="w-4 h-4" /> All Applications
+              </button>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[selectedApp.status].bg} ${statusConfig[selectedApp.status].color}`}>
+                {statusConfig[selectedApp.status].label}
+              </span>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-black text-gray-900">
+                <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">Applicant</p>
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white">
                   {selectedApp.first_name} {selectedApp.last_name}
                 </h1>
-                <p className="text-gray-500 text-sm mt-1">
-                  {selectedApp.email} &middot; {selectedApp.mobile_number} &middot; ID: <span className="font-mono">{selectedApp.id_number}</span>
+                <p className="text-white/40 text-sm mt-1.5">
+                  {selectedApp.email} · {selectedApp.mobile_number} · ID: <span className="font-mono text-white/60">{selectedApp.id_number}</span>
                 </p>
-                <p className="text-xs text-gray-400 mt-1">Submitted {fmtDate(selectedApp.created_at)}</p>
+                <p className="text-white/30 text-xs mt-1">Submitted {fmtDate(selectedApp.created_at)}</p>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-black text-[#22c55e]">{fmtZar(selectedApp.loan_amount)}</p>
-                <p className="text-xs text-gray-500 mt-1">{selectedApp.loan_term_days} day term &middot; Total: {fmtZar(selectedApp.total_repayable)}</p>
+                <p className="text-3xl font-extrabold text-brand-400 tabular-nums">{fmtZar(selectedApp.loan_amount)}</p>
+                <p className="text-white/40 text-xs mt-1">{selectedApp.loan_term_days} day term · Total: {fmtZar(selectedApp.total_repayable)}</p>
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
 
           <div className="grid lg:grid-cols-3 gap-6">
             {/* ── LEFT COLUMN (2/3) ──────────────────────────────── */}
             <div className="lg:col-span-2 space-y-6">
               {/* Application details */}
-              <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="border-b border-gray-100 px-6 py-4">
-                  <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                    <User className="w-4 h-4 text-[#22c55e]" /> Applicant Information
+              <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+                <div className="border-b border-slate-100 px-6 py-4">
+                  <h2 className="font-display font-bold text-navy-900 flex items-center gap-2">
+                    <User className="w-4 h-4 text-brand-500" /> Applicant Information
                   </h2>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-6 p-6">
@@ -646,12 +666,12 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
               </div>
 
               {/* ── Document Verification ─────────────────────────── */}
-              <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="border-b border-gray-100 px-6 py-4">
-                  <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#22c55e]" /> Document Verification
+              <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+                <div className="border-b border-slate-100 px-6 py-4">
+                  <h2 className="font-display font-bold text-navy-900 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-brand-500" /> Document Verification
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">Documents served via time-limited signed URLs (120s). Refresh page to regenerate.</p>
+                  <p className="text-xs text-navy-400 mt-1">Documents served via time-limited signed URLs (120s). Refresh page to regenerate.</p>
                 </div>
                 <div className="p-6 space-y-6">
                   {detailLoading ? (
@@ -660,9 +680,9 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                     </div>
                   ) : documents.length === 0 ? (
                     <div className="text-center py-8">
-                      <FileText className="w-10 h-10 mx-auto text-gray-300 mb-2" />
-                      <p className="text-gray-500 text-sm font-medium">No documents uploaded</p>
-                      <p className="text-gray-400 text-xs mt-1">The applicant has not uploaded any supporting documents.</p>
+                      <FileText className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                      <p className="text-navy-500 text-sm font-medium">No documents uploaded</p>
+                      <p className="text-navy-400 text-xs mt-1">The applicant has not uploaded any supporting documents.</p>
                     </div>
                   ) : (
                     (['payslip', 'bank_statement', 'id_copy'] as const).map(cat => {
@@ -685,7 +705,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                                 const url = docUrls[doc.id];
                                 const isImage = doc.mime_type.startsWith('image/');
                                 return (
-                                  <div key={doc.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-[#22c55e]/40 transition-colors group">
+                                  <div key={doc.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 hover:border-brand-500/30 transition-colors group">
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="min-w-0 flex-1">
                                         <p className="text-sm text-gray-900 font-medium truncate">{doc.file_name}</p>
@@ -702,7 +722,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                                         )}
                                         <div className="flex gap-2 mt-3">
                                           <a href={url} target="_blank" rel="noopener noreferrer"
-                                            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs text-[#22c55e] hover:text-[#16a34a] font-semibold bg-green-50 hover:bg-green-100 rounded-lg py-2 transition-colors"
+                                            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-semibold bg-brand-50 hover:bg-brand-100 rounded-lg py-2 transition-colors"
                                             onClick={() => logAudit('viewed_document', 'application_document', doc.id)}>
                                             <Eye className="w-3.5 h-3.5" /> View
                                           </a>
@@ -734,12 +754,12 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
               </div>
 
               {/* ── Internal Notes ─────────────────────────────────── */}
-              <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="border-b border-gray-100 px-6 py-4">
-                  <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-[#22c55e]" /> Internal Notes
+              <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+                <div className="border-b border-slate-100 px-6 py-4">
+                  <h2 className="font-display font-bold text-navy-900 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-brand-500" /> Internal Notes
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">Private comments visible only to administrators.</p>
+                  <p className="text-xs text-navy-400 mt-1">Private comments visible only to administrators.</p>
                 </div>
                 <div className="p-6">
                   <textarea
@@ -747,10 +767,10 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                     onChange={e => setInternalNote(e.target.value)}
                     placeholder="Add private notes about this application — reasons for approval/denial, follow-up items, etc."
                     rows={4}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-4 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors resize-none"
+                    className="w-full bg-slate-50 border border-slate-200 text-navy-900 rounded-xl p-4 text-sm focus:outline-none focus:border-brand-500/40 transition-colors resize-none"
                   />
                   <div className="flex items-center justify-between mt-3">
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-navy-400">
                       {selectedApp.reviewed_at ? `Last reviewed: ${fmtDate(selectedApp.reviewed_at)}` : 'Not yet reviewed'}
                     </p>
                     <button
@@ -769,15 +789,15 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
             {/* ── RIGHT COLUMN (1/3) ─────────────────────────────── */}
             <div className="space-y-6">
               {/* Action Center */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#22c55e]" /> Action Center
+              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-display text-xs font-bold text-navy-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-brand-500" /> Action Center
                 </h3>
                 <div className="space-y-3">
                   <button
                     onClick={() => openDecision('approved')}
                     disabled={selectedApp.status === 'approved'}
-                    className="w-full flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-green-500/20"
+                    className="w-full flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-brand-500/25"
                   >
                     <CheckCircle className="w-4 h-4" /> Approve Application
                   </button>
@@ -977,51 +997,51 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
               )}
 
               {/* Loan Summary */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Quick Summary</h3>
+              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-display text-xs font-bold text-navy-900 uppercase tracking-widest mb-4">Quick Summary</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Debt-to-Income</span>
-                    <span className="font-bold text-gray-900">
+                    <span className="text-navy-500">Debt-to-Income</span>
+                    <span className="font-bold text-navy-900">
                       {selectedApp.monthly_income > 0
                         ? ((selectedApp.total_repayable / selectedApp.monthly_income) * 100).toFixed(1) + '%'
                         : 'N/A'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Interest Rate</span>
-                    <span className="font-bold text-gray-900">
+                    <span className="text-navy-500">Interest Rate</span>
+                    <span className="font-bold text-navy-900">
                       {selectedApp.loan_amount > 0
                         ? ((selectedApp.interest_amount / selectedApp.loan_amount) * 100).toFixed(1) + '%'
                         : 'N/A'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Total Fees</span>
-                    <span className="font-bold text-gray-900">{fmtZar(selectedApp.service_fee + selectedApp.vat_amount)}</span>
+                    <span className="text-navy-500">Total Fees</span>
+                    <span className="font-bold text-navy-900">{fmtZar(selectedApp.service_fee + selectedApp.vat_amount)}</span>
                   </div>
-                  <div className="border-t border-gray-100 pt-3 flex justify-between">
-                    <span className="text-gray-500 font-medium">Net Payout</span>
-                    <span className="font-black text-[#22c55e]">{fmtZar(selectedApp.loan_amount)}</span>
+                  <div className="border-t border-slate-100 pt-3 flex justify-between">
+                    <span className="text-navy-500 font-medium">Net Payout</span>
+                    <span className="font-black text-brand-600">{fmtZar(selectedApp.loan_amount)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Audit Trail */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                  <History className="w-4 h-4 text-gray-500" /> Audit Trail
+              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-display text-xs font-bold text-navy-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <History className="w-4 h-4 text-navy-400" /> Audit Trail
                 </h3>
                 {auditLogs.length === 0 ? (
-                  <p className="text-xs text-gray-400 py-2">No actions recorded yet.</p>
+                  <p className="text-xs text-navy-400 py-2">No actions recorded yet.</p>
                 ) : (
                   <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                     {auditLogs.map(log => (
-                      <div key={log.id} className="border-l-2 border-gray-200 pl-3 py-1">
-                        <p className="text-xs font-semibold text-gray-700 capitalize">
+                      <div key={log.id} className="border-l-2 border-brand-200 pl-3 py-1">
+                        <p className="text-xs font-semibold text-navy-700 capitalize">
                           {log.action.replace(/_/g, ' ')}
                         </p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{fmtDate(log.created_at)}</p>
+                        <p className="text-[10px] text-navy-400 mt-0.5">{fmtDate(log.created_at)}</p>
                       </div>
                     ))}
                   </div>
@@ -1029,8 +1049,8 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
               </div>
 
               {/* Notifications Sent */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-display text-xs font-bold text-navy-900 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Bell className="w-4 h-4 text-indigo-500" /> Notifications
                   {notifSending && <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400 ml-auto" />}
                 </h3>
@@ -1039,15 +1059,15 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                 ) : (
                   <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                     {notificationLogs.map(log => (
-                      <div key={log.id} className="flex items-start gap-2.5 bg-gray-50 rounded-lg px-3 py-2">
+                      <div key={log.id} className="flex items-start gap-2.5 bg-slate-50 rounded-lg px-3 py-2">
                         <div className="mt-0.5">
                           {log.channel === 'email'
                             ? <Mail className="w-3.5 h-3.5 text-blue-500" />
-                            : <Phone className="w-3.5 h-3.5 text-green-500" />}
+                            : <Phone className="w-3.5 h-3.5 text-brand-500" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-gray-700 capitalize">
+                            <span className="text-xs font-semibold text-navy-700 capitalize">
                               {log.trigger_event.replace(/_/g, ' ')}
                             </span>
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
@@ -1058,7 +1078,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                               {log.status}
                             </span>
                           </div>
-                          <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                          <p className="text-[10px] text-navy-400 truncate mt-0.5">
                             {log.channel === 'email' ? log.recipient : log.recipient} &middot; {new Date(log.created_at).toLocaleString('en-ZA')}
                           </p>
                         </div>
@@ -1227,45 +1247,112 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
 
   // ── QUEUE VIEW ─────────────────────────────────────────────────────
   return (
-    <div className="bg-[#f8fafc] pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-[#22c55e]" /> Admin Dashboard
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">Review, process, and manage loan applications.</p>
+    <div className="bg-slate-50 pb-16">
+      {/* Dark navy header */}
+      <div className="bg-navy-950 pt-20 pb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+            <div>
+              <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">Admin</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-3">
+                <BarChart3 className="w-7 h-7 text-brand-400" /> Dashboard
+              </h1>
+              <p className="text-white/40 text-sm mt-1.5">Review, process, and manage loan applications.</p>
+            </div>
+            <button onClick={fetchApplications}
+              className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.1] text-white/70 hover:text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-white/[0.1] transition-all self-end">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            </button>
           </div>
-          <button onClick={fetchApplications}
-            className="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-          </button>
+          {/* Key metric chips */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <DarkStatCard label="Total Applications" value={String(stats.total)} sub={`${stats.last7} this week`} />
+            <DarkStatCard label="Approval Rate" value={`${stats.approvalRate}%`} sub={`${stats.approved} approved`} accent="text-brand-400" />
+            <DarkStatCard label="Active Portfolio" value={fmtZar(stats.activeLoanValue)} sub={`${stats.disbursed} live loans`} accent="text-blue-400" />
+            <DarkStatCard label="Total Collected" value={fmtZar(stats.repaidValue)} sub={`${stats.repaid} repaid`} accent="text-emerald-400" />
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+
+        {/* Analytics Row */}
+        <div className="grid lg:grid-cols-3 gap-5 mb-6">
+
+          {/* Application Pipeline */}
+          <div className="lg:col-span-2 bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+            <h2 className="font-display font-bold text-navy-900 text-xs uppercase tracking-widest flex items-center gap-2 mb-5">
+              <Activity className="w-4 h-4 text-brand-500" /> Application Pipeline
+            </h2>
+            <div className="space-y-3.5">
+              {[
+                { label: 'Pending Review', value: stats.pending,   color: 'bg-amber-400' },
+                { label: 'Under Review',   value: stats.reviewing, color: 'bg-blue-400' },
+                { label: 'Approved',       value: stats.approved,  color: 'bg-brand-500' },
+                { label: 'Disbursed',      value: stats.disbursed, color: 'bg-emerald-500' },
+                { label: 'Repaid',         value: stats.repaid,    color: 'bg-navy-500' },
+                { label: 'Rejected',       value: stats.rejected,  color: 'bg-red-400' },
+              ].map(row => (
+                <div key={row.label} className="flex items-center gap-3">
+                  <span className="text-xs text-navy-500 w-28 flex-shrink-0">{row.label}</span>
+                  <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div className={`h-full rounded-full ${row.color} transition-all duration-700`}
+                      style={{ width: stats.total > 0 ? `${(row.value / stats.total) * 100}%` : '0%' }} />
+                  </div>
+                  <span className="text-xs font-bold text-navy-900 w-6 text-right tabular-nums">{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Monthly Trend */}
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+            <h2 className="font-display font-bold text-navy-900 text-xs uppercase tracking-widest flex items-center gap-2 mb-4">
+              <BarChart3 className="w-4 h-4 text-brand-500" /> Monthly Trend
+            </h2>
+            <div className="flex items-end gap-1.5" style={{ height: 96 }}>
+              {stats.months.map(m => {
+                const maxVal = Math.max(...stats.months.map(x => x.count), 1);
+                const pct = Math.max((m.count / maxVal) * 100, 4);
+                return (
+                  <div key={m.label} className="flex-1 flex flex-col items-center gap-1 h-full">
+                    <span className="text-[9px] font-bold text-navy-700 leading-none mt-auto">{m.count || ''}</span>
+                    <div className="w-full bg-brand-500 rounded-t transition-all duration-700" style={{ height: `${pct}%` }} />
+                    <span className="text-[9px] text-navy-400 leading-none">{m.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+              <span className="text-xs text-navy-500">Last 30 days</span>
+              <span className="text-xs font-bold text-navy-900">{stats.last30} apps</span>
+            </div>
+          </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Status Summary Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-          <StatCard label="Total" value={stats.total} color="text-gray-900" bg="bg-white" />
+          <StatCard label="Total" value={stats.total} color="text-navy-900" bg="bg-white" />
           <StatCard label="Pending" value={stats.pending} color="text-amber-700" bg="bg-amber-50" />
           <StatCard label="Reviewing" value={stats.reviewing} color="text-blue-700" bg="bg-blue-50" />
           <StatCard label="Approved" value={stats.approved} color="text-green-700" bg="bg-green-50" />
           <StatCard label="Rejected" value={stats.rejected} color="text-red-700" bg="bg-red-50" />
-          <StatCard label="Total Value" value={fmtZar(stats.totalValue)} color="text-[#22c55e]" bg="bg-green-50" isText />
+          <StatCard label="Avg Loan" value={fmtZar(stats.avgLoan)} color="text-brand-600" bg="bg-brand-50" isText />
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm mb-6">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-400" />
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name, email, or ID number..."
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors" />
+                className="w-full bg-slate-50 border border-slate-200 text-navy-900 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500/40 transition-colors" />
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
+              <Filter className="w-4 h-4 text-navy-400" />
               <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as StatusFilter)}
-                className="bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#22c55e]/50">
+                className="bg-slate-50 border border-slate-200 text-navy-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500/40">
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>
                 <option value="under_review">Under Review</option>
@@ -1273,7 +1360,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                 <option value="rejected">Rejected</option>
               </select>
               <button onClick={() => setSortDesc(s => !s)}
-                className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-gray-600 hover:bg-gray-100 transition-colors" title="Toggle sort order">
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-navy-600 hover:bg-slate-100 transition-colors" title="Toggle sort order">
                 {sortDesc ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
               </button>
             </div>
@@ -1288,50 +1375,50 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
 
         {/* Table */}
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-gray-500 gap-2">
+          <div className="flex items-center justify-center py-20 text-navy-500 gap-2">
             <Loader2 className="w-5 h-5 animate-spin" /> Loading applications...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">
-            <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-medium">No applications found</p>
+          <div className="text-center py-20 text-navy-400">
+            <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+            <p className="font-medium text-navy-700">No applications found</p>
             <p className="text-sm mt-1">Try adjusting your search or filters.</p>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50/80 border-b border-gray-200">
-                    <th className="text-left font-semibold text-gray-600 px-5 py-3.5">Applicant</th>
-                    <th className="text-left font-semibold text-gray-600 px-5 py-3.5 hidden lg:table-cell">ID Number</th>
-                    <th className="text-left font-semibold text-gray-600 px-5 py-3.5">Loan Amount</th>
-                    <th className="text-left font-semibold text-gray-600 px-5 py-3.5">Status</th>
-                    <th className="text-left font-semibold text-gray-600 px-5 py-3.5 hidden md:table-cell">Submitted</th>
-                    <th className="text-right font-semibold text-gray-600 px-5 py-3.5">Action</th>
+                  <tr className="bg-slate-50/80 border-b border-slate-200">
+                    <th className="text-left font-semibold text-navy-500 px-5 py-3.5">Applicant</th>
+                    <th className="text-left font-semibold text-navy-500 px-5 py-3.5 hidden lg:table-cell">ID Number</th>
+                    <th className="text-left font-semibold text-navy-500 px-5 py-3.5">Loan Amount</th>
+                    <th className="text-left font-semibold text-navy-500 px-5 py-3.5">Status</th>
+                    <th className="text-left font-semibold text-navy-500 px-5 py-3.5 hidden md:table-cell">Submitted</th>
+                    <th className="text-right font-semibold text-navy-500 px-5 py-3.5">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100">
                   {filtered.map(app => {
                     const cfg = statusConfig[app.status];
                     const StatusIcon = cfg.icon;
                     return (
-                      <tr key={app.id} className="hover:bg-gray-50/60 transition-colors cursor-pointer" onClick={() => openDetail(app)}>
+                      <tr key={app.id} className="hover:bg-slate-50/60 transition-colors cursor-pointer" onClick={() => openDetail(app)}>
                         <td className="px-5 py-3.5">
-                          <div className="font-medium text-gray-900">{app.first_name} {app.last_name}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{app.email}</div>
+                          <div className="font-medium text-navy-900">{app.first_name} {app.last_name}</div>
+                          <div className="text-xs text-navy-400 mt-0.5">{app.email}</div>
                         </td>
-                        <td className="px-5 py-3.5 text-gray-600 font-mono text-xs hidden lg:table-cell">{app.id_number}</td>
-                        <td className="px-5 py-3.5 font-bold text-gray-900">{fmtZar(app.loan_amount)}</td>
+                        <td className="px-5 py-3.5 text-navy-500 font-mono text-xs hidden lg:table-cell">{app.id_number}</td>
+                        <td className="px-5 py-3.5 font-bold text-navy-900">{fmtZar(app.loan_amount)}</td>
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
                             <StatusIcon className="w-3 h-3" /> {cfg.label}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5 text-gray-500 text-xs hidden md:table-cell">{fmtDateShort(app.created_at)}</td>
+                        <td className="px-5 py-3.5 text-navy-400 text-xs hidden md:table-cell">{fmtDateShort(app.created_at)}</td>
                         <td className="px-5 py-3.5 text-right">
                           <button onClick={e => { e.stopPropagation(); openDetail(app); }}
-                            className="inline-flex items-center gap-1.5 text-[#22c55e] hover:text-[#16a34a] font-semibold text-xs transition-colors bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg">
+                            className="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-700 font-semibold text-xs transition-colors bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg">
                             <Eye className="w-3.5 h-3.5" /> Review
                           </button>
                         </td>
@@ -1341,7 +1428,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                 </tbody>
               </table>
             </div>
-            <div className="border-t border-gray-200 px-5 py-3 text-xs text-gray-500 flex justify-between items-center bg-gray-50/50">
+            <div className="border-t border-slate-100 px-5 py-3 text-xs text-navy-400 flex justify-between items-center bg-slate-50/50">
               <span>Showing {filtered.length} of {applications.length} applications</span>
               <span>Last refreshed: {new Date().toLocaleTimeString('en-ZA')}</span>
             </div>
@@ -1354,13 +1441,25 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
 
 // ── Sub-components ───────────────────────────────────────────────────
 
+function DarkStatCard({ label, value, sub, accent = 'text-white' }: {
+  label: string; value: string; sub?: string; accent?: string;
+}) {
+  return (
+    <div className="bg-white/[0.06] border border-white/[0.08] rounded-2xl px-4 py-4">
+      <p className="text-white/40 text-xs font-semibold uppercase tracking-wide mb-1">{label}</p>
+      <p className={`text-xl font-extrabold tabular-nums leading-tight ${accent}`}>{value}</p>
+      {sub && <p className="text-white/30 text-xs mt-1">{sub}</p>}
+    </div>
+  );
+}
+
 function StatCard({ label, value, color, bg, isText }: {
   label: string; value: number | string; color: string; bg: string; isText?: boolean;
 }) {
   return (
-    <div className={`${bg} border border-gray-200 rounded-xl px-4 py-3 shadow-sm`}>
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className={`text-xl font-black mt-1 ${color} ${isText ? '!text-base' : ''}`}>{isText ? value : value}</p>
+    <div className={`${bg} border border-slate-200 rounded-xl px-4 py-3 shadow-sm`}>
+      <p className="text-xs font-medium text-navy-400 uppercase tracking-wide">{label}</p>
+      <p className={`font-extrabold mt-1 ${color} ${isText ? 'text-sm' : 'text-xl'}`}>{value}</p>
     </div>
   );
 }
@@ -1381,7 +1480,7 @@ function InfoBlock({
         {items.map(item => (
           <div key={item.label} className="flex justify-between text-sm">
             <span className="text-gray-500">{item.label}</span>
-            <span className={`font-medium text-right ${item.highlight ? 'text-[#22c55e] font-bold' : 'text-gray-900'}`}>
+            <span className={`font-medium text-right ${item.highlight ? 'text-brand-600 font-bold' : 'text-navy-900'}`}>
               {item.value}
             </span>
           </div>
