@@ -6,11 +6,12 @@ import {
   Loader2, Lock, RefreshCw, CreditCard, MessageSquare,
   Download, Save, BarChart3, Fingerprint, Activity,
   AlertTriangle, CircleDollarSign, BadgeCheck,
-  Mail, Phone, Bell
+  Mail, Phone, Bell, Banknote, Wallet
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { logAudit } from '../lib/auditLog';
 import DebiCheckModal, { MandateStatusBadge, type MandateRecord } from './DebiCheckModal';
+import LoanContractModal, { type LoanContractRecord } from './LoanContractModal';
 
 // ── Types ────────────────────────────────────────────────────────────
 interface LoanApplication {
@@ -39,6 +40,9 @@ interface LoanApplication {
   reviewed_at: string | null;
   credit_consent_given: boolean;
   credit_consent_at: string | null;
+  loan_disbursed_at: string | null;
+  loan_paid_at: string | null;
+  loan_lifecycle: 'approved' | 'disbursed' | 'repaid' | 'defaulted' | null;
   created_at: string;
 }
 
@@ -143,6 +147,10 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
   const [internalNote, setInternalNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
 
+  // Loan Contract state
+  const [loanContract, setLoanContract] = useState<LoanContractRecord | null>(null);
+  const [contractOpen, setContractOpen] = useState(false);
+
   // DebiCheck state
   const [mandate, setMandate] = useState<MandateRecord | null>(null);
   const [debiCheckOpen, setDebiCheckOpen] = useState(false);
@@ -152,6 +160,10 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
   const [creditCheckLoading, setCreditCheckLoading] = useState(false);
   const [creditReport, setCreditReport] = useState<CreditCheckSummary | null>(null);
   const [creditError, setCreditError] = useState('');
+
+  // Disbursement state
+  const [disbursing, setDisbursing] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState(false);
 
   // Notification state
   const [notificationLogs, setNotificationLogs] = useState<{ id: string; channel: string; trigger_event: string; status: string; recipient: string; created_at: string }[]>([]);
@@ -250,6 +262,16 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
     }
     setDocUrls(urls);
 
+    // Fetch existing Loan Contract for this application
+    const { data: contractData } = await supabase
+      .from('loan_contracts')
+      .select('*')
+      .eq('application_id', app.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLoanContract((contractData as LoanContractRecord) || null);
+
     // Fetch existing DebiCheck mandate for this application
     const { data: mandateData } = await supabase
       .from('debicheck_mandates')
@@ -319,6 +341,8 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
     setSelectedApp(null);
     setDecisionOpen(false);
     setDecisionComment('');
+    setLoanContract(null);
+    setContractOpen(false);
     setMandate(null);
     setDebiCheckOpen(false);
     setCreditReport(null);
@@ -413,6 +437,41 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
       setNotifSending(false);
     }
   }, []);
+
+  // ── Disbursement handlers ───────────────────────────────────────
+  const handleMarkDisbursed = useCallback(async () => {
+    if (!selectedApp) return;
+    setDisbursing(true);
+    const now = new Date().toISOString();
+    const { error: err } = await supabase
+      .from('loan_applications')
+      .update({ loan_disbursed_at: now, loan_lifecycle: 'disbursed' })
+      .eq('id', selectedApp.id);
+    if (!err) {
+      const updated = { ...selectedApp, loan_disbursed_at: now, loan_lifecycle: 'disbursed' as const };
+      setSelectedApp(updated);
+      setApplications(prev => prev.map(a => a.id === selectedApp.id ? { ...a, loan_disbursed_at: now, loan_lifecycle: 'disbursed' as const } : a));
+      await logAudit('loan_disbursed', 'loan_application', selectedApp.id, { disbursed_at: now });
+    }
+    setDisbursing(false);
+  }, [selectedApp]);
+
+  const handleMarkRepaid = useCallback(async () => {
+    if (!selectedApp) return;
+    setMarkingPaid(true);
+    const now = new Date().toISOString();
+    const { error: err } = await supabase
+      .from('loan_applications')
+      .update({ loan_paid_at: now, loan_lifecycle: 'repaid' })
+      .eq('id', selectedApp.id);
+    if (!err) {
+      const updated = { ...selectedApp, loan_paid_at: now, loan_lifecycle: 'repaid' as const };
+      setSelectedApp(updated);
+      setApplications(prev => prev.map(a => a.id === selectedApp.id ? { ...a, loan_paid_at: now, loan_lifecycle: 'repaid' as const } : a));
+      await logAudit('loan_repaid', 'loan_application', selectedApp.id, { paid_at: now });
+    }
+    setMarkingPaid(false);
+  }, [selectedApp]);
 
   const submitDecision = useCallback(async () => {
     if (!selectedApp || !decisionComment.trim()) return;
@@ -788,6 +847,42 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                 </div>
               )}
 
+              {/* ── Loan Contract ─────────────────────────────── */}
+              {selectedApp.status === 'approved' && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#22c55e]" /> Loan Contract
+                  </h3>
+                  {loanContract && (
+                    <div className="mb-4">
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
+                        loanContract.status === 'signed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {loanContract.status === 'signed'
+                          ? <CheckCircle className="w-3.5 h-3.5" />
+                          : <AlertCircle className="w-3.5 h-3.5" />}
+                        {loanContract.status === 'signed' ? 'Signed by client' : 'Pending client signature'}
+                      </div>
+                      {loanContract.contract_number && (
+                        <p className="text-[10px] text-gray-400 mt-1.5 font-mono">{loanContract.contract_number}</p>
+                      )}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setContractOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-green-500/20"
+                  >
+                    <FileText className="w-4 h-4" />
+                    {!loanContract ? 'Generate Loan Contract' : loanContract.status === 'signed' ? 'View Signed Contract' : 'View / Download Contract'}
+                  </button>
+                  {!loanContract && (
+                    <p className="text-[10px] text-gray-400 text-center mt-2">
+                      Generates a pre-populated loan agreement for client signature. Complete before initiating DebiCheck.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* DebiCheck Mandate */}
               {selectedApp.status === 'approved' && (
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
@@ -819,6 +914,65 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                       Sends a TT1 real-time push to the client's banking app for immediate authentication.
                     </p>
                   )}
+                </div>
+              )}
+
+              {/* ── Disbursement Actions ────────────────────── */}
+              {selectedApp.status === 'approved' && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <Banknote className="w-4 h-4 text-emerald-600" /> Disbursement
+                  </h3>
+
+                  {/* Status strip */}
+                  {selectedApp.loan_lifecycle && (
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold mb-4 ${
+                      selectedApp.loan_lifecycle === 'repaid'    ? 'bg-green-100 text-green-700' :
+                      selectedApp.loan_lifecycle === 'disbursed' ? 'bg-blue-100 text-blue-700' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {selectedApp.loan_lifecycle === 'repaid'    ? <CheckCircle className="w-3.5 h-3.5" /> :
+                       selectedApp.loan_lifecycle === 'disbursed' ? <Banknote className="w-3.5 h-3.5" /> :
+                       <Clock className="w-3.5 h-3.5" />}
+                      {selectedApp.loan_lifecycle === 'repaid'
+                        ? `Repaid on ${fmtDateShort(selectedApp.loan_paid_at!)}`
+                        : selectedApp.loan_lifecycle === 'disbursed'
+                        ? `Disbursed on ${fmtDateShort(selectedApp.loan_disbursed_at!)}`
+                        : 'Awaiting disbursement'}
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {/* Mark as Paid / Disbursed */}
+                    {(!selectedApp.loan_lifecycle || selectedApp.loan_lifecycle === 'approved') && (
+                      <button
+                        onClick={handleMarkDisbursed}
+                        disabled={disbursing}
+                        className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-100 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-all shadow-sm"
+                      >
+                        {disbursing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}
+                        {disbursing ? 'Processing…' : 'Mark as Paid / Disbursed'}
+                      </button>
+                    )}
+
+                    {/* Payment Received */}
+                    {selectedApp.loan_lifecycle === 'disbursed' && (
+                      <button
+                        onClick={handleMarkRepaid}
+                        disabled={markingPaid}
+                        className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-100 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-all shadow-sm"
+                      >
+                        {markingPaid ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
+                        {markingPaid ? 'Processing…' : 'Payment Received'}
+                      </button>
+                    )}
+
+                    {selectedApp.loan_lifecycle === 'repaid' && (
+                      <div className="text-center text-sm text-green-700 font-semibold py-2">
+                        ✓ Loan fully repaid — no further action needed.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -916,6 +1070,20 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
             </div>
           </div>
         </div>
+
+        {/* ── Loan Contract Modal ──────────────────────────────── */}
+        {selectedApp && (
+          <LoanContractModal
+            isOpen={contractOpen}
+            onClose={() => setContractOpen(false)}
+            application={selectedApp}
+            existingContract={loanContract}
+            isAdminView={true}
+            onContractUpdate={(updated) => {
+              setLoanContract(updated);
+            }}
+          />
+        )}
 
         {/* ── DebiCheck Modal ─────────────────────────────────────── */}
         {selectedApp && (

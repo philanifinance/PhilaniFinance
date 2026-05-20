@@ -4,17 +4,22 @@ import {
   ChevronRight, Loader2, RefreshCw, ArrowRight,
   Briefcase, Building2, CreditCard, Shield,
   Pencil, Save, X, AlertCircle, FolderOpen,
-  Download, ShieldCheck, Wifi
+  Download, ShieldCheck, Wifi, Pen
 } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useProfile, type ProfileData } from '../lib/ProfileContext';
+import LoanContractModal, { type LoanContractRecord } from './LoanContractModal';
 
 // ── Types ────────────────────────────────────────────────────────────
 interface LoanApplication {
   id: string;
+  user_id: string;
   first_name: string;
   last_name: string;
+  id_number: string;
+  mobile_number: string;
+  email: string;
   loan_amount: number;
   loan_term_days: number;
   total_repayable: number;
@@ -23,6 +28,7 @@ interface LoanApplication {
   vat_amount: number;
   monthly_income: number;
   employer_name: string;
+  pay_date: string;
   bank_name: string;
   account_number: string;
   account_type: string;
@@ -47,12 +53,20 @@ interface MandateInfo {
   status: string;
 }
 
+interface ContractInfo {
+  id: string;
+  status: 'pending_signature' | 'signed' | 'cancelled';
+  contract_number: string;
+  signed_at: string | null;
+}
+
 type Tab = 'tracker' | 'history' | 'documents' | 'profile';
 
 // ── Status config ────────────────────────────────────────────────────
 const statusSteps = [
   { key: 'submitted', label: 'Submitted', icon: FileText },
   { key: 'under_review', label: 'Under Review', icon: Eye },
+  { key: 'contract', label: 'Loan Contract', icon: Pen },
   { key: 'debicheck', label: 'DebiCheck Auth', icon: ShieldCheck },
   { key: 'decision', label: 'Decision', icon: CheckCircle },
 ] as const;
@@ -78,18 +92,22 @@ function fmtBytes(b: number) {
   return (b / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-function getProgressStep(status: LoanApplication['status'], mandateStatus?: string): number {
+function getProgressStep(
+  status: LoanApplication['status'],
+  contractStatus?: string,
+  mandateStatus?: string,
+): number {
   if (status === 'pending') return 1;
-  if (status === 'under_review') {
-    // If a mandate exists and is pending/submitted, show DebiCheck step as active
-    if (mandateStatus && ['mandate_submitted', 'pending_bank'].includes(mandateStatus)) return 3;
-    return 2;
-  }
+  if (status === 'under_review') return 2;
   if (status === 'approved') {
-    // Approved means DebiCheck was accepted (or skipped) and decision made
-    return 4;
+    if (!contractStatus || contractStatus === 'pending_signature') return 3;
+    if (contractStatus === 'signed') {
+      if (mandateStatus && ['mandate_submitted', 'pending_bank'].includes(mandateStatus)) return 4;
+      return 4;
+    }
+    return 5;
   }
-  return 4; // rejected also = decision step
+  return 5; // rejected also = decision step
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -107,6 +125,9 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<LoanApplication | null>(null);
   const [mandate, setMandate] = useState<MandateInfo | null>(null);
+  const [contract, setContract] = useState<ContractInfo | null>(null);
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [fullContract, setFullContract] = useState<LoanContractRecord | null>(null);
   const [userDocs, setUserDocs] = useState<AppDocument[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
 
@@ -120,17 +141,27 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
     const apps = (data as LoanApplication[]) || [];
     setApplications(apps);
 
-    // Fetch mandate for the most active app
+    // Fetch contract + mandate for the most active app
     const active = apps.find(a => a.status === 'pending' || a.status === 'under_review' || a.status === 'approved') || apps[0];
     if (active) {
-      const { data: m } = await supabase
-        .from('debicheck_mandates')
-        .select('status')
-        .eq('application_id', active.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const [{ data: m }, { data: c }] = await Promise.all([
+        supabase
+          .from('debicheck_mandates')
+          .select('status')
+          .eq('application_id', active.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('loan_contracts')
+          .select('id, status, contract_number, signed_at')
+          .eq('application_id', active.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
       setMandate(m as MandateInfo | null);
+      setContract(c as ContractInfo | null);
     }
     setLoading(false);
   }, [user.id]);
@@ -150,7 +181,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
   // Lazy-load docs only when that tab is opened
   useEffect(() => { if (tab === 'documents') fetchUserDocs(); }, [tab, fetchUserDocs]);
 
-  const activeApp = applications.find(a => a.status === 'pending' || a.status === 'under_review') || applications[0] || null;
+  const activeApp = applications.find(a => a.status !== 'rejected') || applications[0] || null;
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'tracker', label: 'Application Tracker', icon: FileText },
@@ -245,13 +276,15 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                   {/* Visual progress stepper */}
                   <div className="flex items-center justify-between mb-4">
                     {statusSteps.map((s, idx) => {
-                      const current = getProgressStep(activeApp.status, mandate?.status);
+                      const current = getProgressStep(activeApp.status, contract?.status, mandate?.status);
                       const isActive = idx + 1 <= current;
                       const isCurrent = idx + 1 === current;
                       const Icon = s.icon;
                       const isDebiCheck = s.key === 'debicheck';
+                      const isContractStep = s.key === 'contract';
                       const isDeclined = activeApp.status === 'rejected' && s.key === 'decision';
                       const isDebiWaiting = isDebiCheck && mandate && ['mandate_submitted', 'pending_bank'].includes(mandate.status);
+                      const isContractPending = isContractStep && contract && contract.status === 'pending_signature';
                       return (
                         <div key={s.key} className="flex items-center flex-1">
                           <div className="flex flex-col items-center flex-1">
@@ -266,11 +299,14 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                                 <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
                               )}
                             </div>
-                            <span className={`text-xs font-medium ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
-                              {isDeclined ? 'Declined' : isDebiWaiting ? 'Awaiting Auth' : s.label}
+                            <span className={`text-xs font-medium text-center ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+                              {isDeclined ? 'Declined' : isDebiWaiting ? 'Awaiting Auth' : isContractPending ? 'Sign Contract' : s.label}
                             </span>
                             {isDebiWaiting && (
                               <span className="text-[10px] text-amber-600 font-medium animate-pulse">Check your banking app</span>
+                            )}
+                            {isContractPending && (
+                              <span className="text-[10px] text-amber-600 font-medium animate-pulse">Action required</span>
                             )}
                           </div>
                           {idx < statusSteps.length - 1 && (
@@ -286,6 +322,71 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                     {activeApp.reviewed_at && ` · Reviewed on ${fmtDateTime(activeApp.reviewed_at)}`}
                   </p>
                 </div>
+
+                {/* ── Loan Contract Card (shown when approved & contract exists) ── */}
+                {activeApp.status === 'approved' && contract && (
+                  <div className={`border rounded-2xl p-6 shadow-sm ${
+                    contract.status === 'signed'
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-amber-50 border-amber-200'
+                  }`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                          contract.status === 'signed' ? 'bg-green-200' : 'bg-amber-200'
+                        }`}>
+                          <FileText className={`w-5 h-5 ${
+                            contract.status === 'signed' ? 'text-green-700' : 'text-amber-700'
+                          }`} />
+                        </div>
+                        <div>
+                          <h3 className={`font-bold ${
+                            contract.status === 'signed' ? 'text-green-800' : 'text-amber-800'
+                          }`}>
+                            {contract.status === 'signed' ? 'Loan Agreement Signed' : 'Loan Agreement Requires Your Signature'}
+                          </h3>
+                          <p className={`text-xs mt-0.5 ${
+                            contract.status === 'signed' ? 'text-green-600' : 'text-amber-600'
+                          }`}>
+                            {contract.status === 'signed'
+                              ? `Signed · Ref: ${contract.contract_number}`
+                              : `Contract ref: ${contract.contract_number} · Please sign before DebiCheck authorisation`}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const { data } = await supabase
+                            .from('loan_contracts')
+                            .select('*')
+                            .eq('id', contract.id)
+                            .single();
+                          setFullContract(data as LoanContractRecord);
+                          setContractModalOpen(true);
+                        }}
+                        className={`flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-colors ${
+                          contract.status === 'signed'
+                            ? 'bg-green-200 hover:bg-green-300 text-green-800'
+                            : 'bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-sm'
+                        }`}
+                      >
+                        <Pen className="w-3.5 h-3.5" />
+                        {contract.status === 'signed' ? 'View Contract' : 'Sign Now'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── No contract yet but approved ─────────────────── */}
+                {activeApp.status === 'approved' && !contract && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-3">
+                    <FileText className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-bold text-blue-800">Loan Approved — Contract Coming Soon</h3>
+                      <p className="text-sm text-blue-600 mt-1">Your loan has been approved. A loan agreement contract is being prepared for your signature. Check back shortly.</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Active application summary */}
                 <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
@@ -504,6 +605,31 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
           <ProfileTab profile={profile} userEmail={user.email || ''} updateProfile={updateProfile} />
         )}
       </div>
+
+      {/* ── Loan Contract Modal ────────────────────────────────────── */}
+      {activeApp && fullContract && (
+        <LoanContractModal
+          isOpen={contractModalOpen}
+          onClose={() => { setContractModalOpen(false); setFullContract(null); }}
+          application={activeApp}
+          existingContract={fullContract}
+          isAdminView={false}
+          onContractUpdate={(updated) => {
+            setContract({
+              id: updated.id,
+              status: updated.status,
+              contract_number: updated.contract_number,
+              signed_at: updated.signed_at,
+            });
+            setFullContract(updated);
+            if (updated.status === 'signed') {
+              setContractModalOpen(false);
+              setFullContract(null);
+              fetchApplications();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
