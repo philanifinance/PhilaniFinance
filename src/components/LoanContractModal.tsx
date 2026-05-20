@@ -55,11 +55,11 @@ interface LoanContractModalProps {
 
 // ── NCR / Company Constants ───────────────────────────────────────────
 const COMPANY = {
-  name: 'Philani Finance (Pty) Ltd',
-  ncr: 'NCRCP XXXX',
-  reg: '20XX/XXXXXX/07',
-  address: 'South Africa',
-  phone: '+27 XX XXX XXXX',
+  name: 'Philani Financial Services',
+  ncr: 'NCRCP18260',
+  reg: 'NCRCP18260',
+  address: '3663 Mtshilibe Street, Ratanda, Heidelberg, 1441',
+  phone: '013 752 2478',
   email: 'info@philanifinance.co.za',
 };
 

@@ -41,9 +41,9 @@ export default function Footer() {
                 <Mail className="w-4 h-4 text-brand-500" />
                 info@philanifinance.co.za
               </a>
-              <a href="tel:+27000000000" className="flex items-center gap-2 text-navy-400 hover:text-white transition-colors text-sm">
+              <a href="tel:+27137522478" className="flex items-center gap-2 text-navy-400 hover:text-white transition-colors text-sm">
                 <Phone className="w-4 h-4 text-brand-500" />
-                +27 (0) 00 000 0000
+                013 752 2478
               </a>
             </div>
           </div>
@@ -81,8 +81,9 @@ export default function Footer() {
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-brand-500 flex-shrink-0" />
-                <span>NCR Reg: <span className="text-navy-200 font-mono text-xs">NCRCP0000</span></span>
+                <span>NCR Reg: <span className="text-navy-200 font-mono text-xs">NCRCP18260</span></span>
               </div>
+              <p className="text-xs text-navy-500 leading-relaxed">3663 Mtshilibe Street,<br/>Ratanda, Heidelberg, 1441</p>
               <p>NCA Compliant Lender</p>
               <p>POPIA Compliant</p>
             </div>
@@ -96,7 +97,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-navy-800/60 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-navy-600">&copy; {new Date().getFullYear()} Philani Finance (Pty) Ltd. All rights reserved.</p>
+          <p className="text-xs text-navy-600">&copy; {new Date().getFullYear()} Philani Financial Services. All rights reserved.</p>
           <p className="text-xs text-navy-700 text-center sm:text-right max-w-md leading-relaxed">
             ⚠ Warning: Borrowing money is expensive. Please borrow only what you can afford to repay.
           </p>

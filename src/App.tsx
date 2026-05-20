@@ -100,6 +100,16 @@ function AppInner() {
     window.scrollTo(0, 0);
   }, []);
 
+  useEffect(() => {
+    (window as unknown as Record<string, unknown>).__appNavigate = (p: Page) => {
+      setCurrentPage(p);
+      window.scrollTo(0, 0);
+    };
+    return () => {
+      delete (window as unknown as Record<string, unknown>).__appNavigate;
+    };
+  }, []);
+
   const handleAuthSuccess = useCallback(() => {
     closeAuthModal();
   }, [closeAuthModal]);

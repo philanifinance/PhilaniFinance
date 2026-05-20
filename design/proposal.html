@@ -1,0 +1,361 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; color: #0f172a; background: white; }
+  h1, h2, h3 { font-family: 'Poppins', sans-serif; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+  .page { width: 210mm; min-height: 297mm; padding: 16mm 18mm 14mm; background: white; position: relative; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+
+  .brand-strip { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 5mm; border-bottom: 2pt solid #0f172a; margin-bottom: 9mm; }
+  .brand-name { font-family: 'Poppins', sans-serif; font-size: 15pt; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: #0f172a; }
+  .brand-name span { color: #22c55e; }
+  .brand-sub { font-size: 7pt; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(15,23,42,0.5); margin-top: 1.5mm; }
+  .page-num { font-size: 7.5pt; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(15,23,42,0.45); }
+
+  .cover { padding: 0; min-height: 297mm; background: #0f172a; display: flex; flex-direction: column; }
+  .cover-inner { padding: 22mm 18mm; display: flex; flex-direction: column; flex: 1; }
+  .cover .top-meta { display: flex; justify-content: space-between; align-items: flex-start; font-size: 8pt; color: rgba(255,255,255,0.35); letter-spacing: 0.22em; text-transform: uppercase; font-family: 'Inter', sans-serif; }
+  .cover .brand-name { color: white; font-size: 16pt; }
+  .cover .brand-name span { color: #22c55e; }
+  .cover .center { margin-top: auto; margin-bottom: auto; }
+  .cover .kicker { font-size: 8pt; letter-spacing: 0.35em; text-transform: uppercase; color: #22c55e; margin-bottom: 8mm; font-weight: 700; }
+  .cover h1 { font-size: 34pt; line-height: 1.1; color: #fff; max-width: 155mm; }
+  .cover .sub { font-size: 11pt; font-weight: 300; color: rgba(255,255,255,0.62); line-height: 1.65; max-width: 150mm; margin-top: 10mm; }
+  .cover .for { margin-top: 14mm; font-size: 8pt; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .cover .for b { color: #fff; letter-spacing: 0; font-family: 'Poppins', sans-serif; font-size: 13pt; font-weight: 700; text-transform: none; display: block; margin-top: 2mm; }
+  .cover .ncr-pill { display: inline-flex; align-items: center; gap: 2mm; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; font-size: 7.5pt; padding: 1.5mm 4mm; border-radius: 99pt; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-top: 10mm; }
+  .cover .footer-meta { margin-top: auto; padding-top: 12mm; border-top: 1px solid rgba(255,255,255,0.12); display: flex; justify-content: space-between; font-size: 8pt; color: rgba(255,255,255,0.35); }
+
+  .section-kicker { font-size: 8pt; letter-spacing: 0.3em; text-transform: uppercase; color: #22c55e; margin-bottom: 4mm; font-weight: 700; }
+  .section-title { font-size: 22pt; color: #0f172a; line-height: 1.1; margin-bottom: 5mm; max-width: 160mm; }
+  .section-lead { font-size: 10pt; color: rgba(15,23,42,0.72); line-height: 1.65; max-width: 165mm; font-weight: 400; margin-bottom: 10mm; }
+
+  .issues { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .issue-card { padding: 5mm 6mm 5mm; background: #f8fafc; border: 1px solid rgba(15,23,42,0.1); border-radius: 4pt; border-left: 2.5pt solid #ef4444; position: relative; }
+  .issue-card .num { position: absolute; top: 4mm; right: 5mm; font-family: 'Poppins', sans-serif; font-size: 18pt; color: rgba(239,68,68,0.12); font-weight: 800; line-height: 1; }
+  .issue-card .h { font-family: 'Poppins', sans-serif; font-size: 10pt; font-weight: 700; color: #0f172a; margin-bottom: 2mm; line-height: 1.25; padding-right: 10mm; }
+  .issue-card .b { font-size: 8pt; line-height: 1.55; color: rgba(15,23,42,0.72); }
+
+  .fixes { margin-top: 2mm; }
+  .fix-row { display: grid; grid-template-columns: 38% 1fr; gap: 6mm; padding: 5mm 0; border-bottom: 1px solid rgba(15,23,42,0.1); align-items: flex-start; }
+  .fix-row:first-child { border-top: 2pt solid #0f172a; padding-top: 5mm; }
+  .fix-row .issue-tag { font-size: 7pt; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(239,68,68,0.85); margin-bottom: 1.5mm; font-weight: 700; }
+  .fix-row .issue-name { font-family: 'Poppins', sans-serif; font-size: 10pt; font-weight: 600; color: rgba(15,23,42,0.5); text-decoration: line-through; text-decoration-color: rgba(239,68,68,0.5); }
+  .fix-row .arrow { font-size: 9pt; color: rgba(15,23,42,0.35); margin-top: 3mm; }
+  .fix-row .fix-tag { font-size: 7pt; letter-spacing: 0.2em; text-transform: uppercase; color: #22c55e; margin-bottom: 1.5mm; font-weight: 700; }
+  .fix-row .fix-name { font-family: 'Poppins', sans-serif; font-size: 11pt; font-weight: 700; color: #0f172a; margin-bottom: 2mm; }
+  .fix-row .fix-detail { font-size: 8.5pt; line-height: 1.55; color: rgba(15,23,42,0.72); }
+
+  .impact { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-bottom: 9mm; }
+  .impact-tile { padding: 6mm; background: #f8fafc; border-radius: 4pt; border-top: 2.5pt solid #22c55e; }
+  .impact-tile .label { font-size: 7.5pt; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(15,23,42,0.55); margin-bottom: 2mm; font-weight: 600; }
+  .impact-tile .value { font-family: 'Poppins', sans-serif; font-size: 18pt; font-weight: 800; color: #0f172a; line-height: 1; margin-bottom: 3mm; }
+  .impact-tile .why { font-size: 8.5pt; line-height: 1.55; color: rgba(15,23,42,0.72); }
+
+  .timeline { margin-top: 2mm; }
+  .time-row { display: grid; grid-template-columns: 30mm 1fr; gap: 4mm; padding: 4mm 0; border-bottom: 1px dashed rgba(15,23,42,0.15); }
+  .time-row:first-child { border-top: 1px dashed rgba(15,23,42,0.15); }
+  .time-row .wk { font-family: 'Poppins', sans-serif; font-size: 9.5pt; color: #22c55e; font-weight: 700; }
+  .time-row .t { font-size: 9.5pt; font-weight: 700; color: #0f172a; margin-bottom: 1mm; font-family: 'Poppins', sans-serif; }
+  .time-row .d { font-size: 8.5pt; line-height: 1.5; color: rgba(15,23,42,0.72); }
+
+  .close { margin-top: 8mm; padding: 7mm 8mm; background: #0f172a; color: white; border-radius: 6pt; }
+  .close h3 { font-family: 'Poppins', sans-serif; font-size: 15pt; font-weight: 800; margin-bottom: 3mm; }
+  .close p { font-size: 9.5pt; line-height: 1.65; color: rgba(255,255,255,0.75); margin: 0 0 4mm; }
+  .close .cta { display: flex; gap: 8mm; margin-top: 5mm; font-size: 8.5pt; line-height: 1.6; }
+  .close .cta b { color: #22c55e; font-family: 'Poppins', sans-serif; font-size: 11pt; font-weight: 700; display: block; margin-bottom: 1mm; }
+  .close .signature { margin-top: 6mm; padding-top: 5mm; border-top: 1px solid rgba(255,255,255,0.15); font-size: 8pt; color: rgba(255,255,255,0.45); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  .callout { margin-top: 8mm; padding: 6mm 7mm; background: #0f172a; color: white; border-radius: 4pt; }
+  .callout-label { font-size: 7.5pt; letter-spacing: 0.28em; text-transform: uppercase; color: #22c55e; margin-bottom: 2.5mm; font-weight: 700; }
+  .callout-body { font-size: 10pt; line-height: 1.6; color: rgba(255,255,255,0.85); }
+  .callout-body b { color: white; font-family: 'Poppins', sans-serif; font-weight: 700; }
+
+  .quote-bar { margin: 10mm 0 0; padding: 6mm 7mm; border-left: 3pt solid #22c55e; background: #f8fafc; font-family: 'Poppins', sans-serif; font-size: 12pt; font-weight: 600; line-height: 1.5; color: #0f172a; }
+  .quote-bar .by { display: block; font-size: 8pt; font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(15,23,42,0.55); margin-top: 4mm; font-family: 'Inter', sans-serif; }
+</style></head>
+<body>
+
+  <!-- PAGE 1 · COVER -->
+  <section class="page cover">
+    <div class="cover-inner">
+      <div class="top-meta">
+        <div class="brand-name">Philani <span>Finance</span></div>
+        <div>PFS-PROP-2026-001</div>
+      </div>
+      <div class="center">
+        <div class="kicker">Digital Lending Platform &middot; Project Proposal</div>
+        <h1>A fully digital lending platform built for Philani Financial Services.</h1>
+        <p class="sub">A proposal to design and build a complete digital micro-lending platform &mdash; covering client-facing loan applications, a self-service portal, admin analytics, NCA/NCR-compliant loan contracts, automated notifications, and DebiCheck integration. Purpose-built for South African compliance and scale.</p>
+        <div class="for">
+          Prepared for
+          <b>Philani Financial Services &middot; Attn: Management</b>
+        </div>
+        <div class="ncr-pill">NCR Reg: NCRCP18260 &middot; NCA &amp; POPIA Compliant</div>
+      </div>
+      <div class="footer-meta">
+        <div>Ntuthuko Smith &middot; Web & Software Development</div>
+        <div>ntuthukosmith10@gmail.com</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 2 · OPERATIONAL PROBLEMS -->
+  <section class="page">
+    <div class="brand-strip">
+      <div><div class="brand-name">Philani <span>Finance</span></div><div class="brand-sub">Proposal &middot; Operational audit</div></div>
+      <div class="page-num">02 &middot; The problem</div>
+    </div>
+    <div class="section-kicker">01 &middot; Six bottlenecks holding the business back</div>
+    <h2 class="section-title">What's working against you today.</h2>
+    <p class="section-lead">Without a purpose-built digital platform, each loan application touches multiple manual steps, compliance risks, and communication gaps that compound with volume. Six structural issues cost time, create risk, and limit growth.</p>
+    <div class="issues">
+      
+        <div class="issue-card">
+          <div class="num">01</div>
+          <div class="h">Manual, paper-based loan applications</div>
+          <div class="b">Applications are collected on paper or via email, requiring manual data entry, physical document handling, and repeated back-and-forth with applicants. This slows processing, introduces errors, and limits throughput.</div>
+        </div>
+      
+        <div class="issue-card">
+          <div class="num">02</div>
+          <div class="h">No client self-service portal</div>
+          <div class="b">Applicants have no visibility into their application status after submission. This generates high volumes of follow-up phone calls, WhatsApp messages, and in-person visits — consuming staff time that could be spent on credit assessment.</div>
+        </div>
+      
+        <div class="issue-card">
+          <div class="num">03</div>
+          <div class="h">Ad-hoc compliance &amp; audit trail</div>
+          <div class="b">The NCA requires a clear, auditable record of every lending decision including pre-agreement statements, credit checks, and signed contracts. Without a centralised system, this trail is fragmented across emails, files, and handwritten notes.</div>
+        </div>
+      
+        <div class="issue-card">
+          <div class="num">04</div>
+          <div class="h">Insecure document collection</div>
+          <div class="b">Collecting payslips, bank statements, and ID documents via WhatsApp or email is a POPIA compliance risk. Sensitive personal data flows through uncontrolled channels with no encryption, access logging, or retention policy.</div>
+        </div>
+      
+        <div class="issue-card">
+          <div class="num">05</div>
+          <div class="h">No automated client notifications</div>
+          <div class="b">Status updates — approval, document requests, contract readiness, DebiCheck alerts — are communicated manually by phone or WhatsApp. Delays in communication reduce client trust and increase churn at critical decision points.</div>
+        </div>
+      
+        <div class="issue-card">
+          <div class="num">06</div>
+          <div class="h">Zero portfolio analytics</div>
+          <div class="b">Without a central dashboard, management has no real-time view of pipeline volume, approval rates, active loan values, repayment trends, or month-on-month application growth. Strategic decisions are made without data.</div>
+        </div>
+      
+    </div>
+  </section>
+
+  <!-- PAGE 3 · THE SOLUTION -->
+  <section class="page">
+    <div class="brand-strip">
+      <div><div class="brand-name">Philani <span>Finance</span></div><div class="brand-sub">Proposal &middot; The solution</div></div>
+      <div class="page-num">03 &middot; The fix</div>
+    </div>
+    <div class="section-kicker">02 &middot; The platform, problem by problem</div>
+    <h2 class="section-title">Every issue above &mdash; solved by the platform.</h2>
+    <p class="section-lead">The platform has been designed and built with each operational pain point in mind. Below is a direct mapping from problem to solution, with the specific feature that resolves it.</p>
+    <div class="fixes">
+      
+        <div class="fix-row">
+          <div>
+            <div class="issue-tag">Current state</div>
+            <div class="issue-name">Manual paper applications</div>
+            <div class="arrow">&darr; Resolved by</div>
+          </div>
+          <div>
+            <div class="fix-tag">Platform feature</div>
+            <div class="fix-name">Multi-step digital application form</div>
+            <div class="fix-detail">A fully validated, multi-step form captures personal, employment, banking, and document data in one seamless flow — with SA ID validation, income parsing, and real-time fee calculation built in.</div>
+          </div>
+        </div>
+      
+        <div class="fix-row">
+          <div>
+            <div class="issue-tag">Current state</div>
+            <div class="issue-name">No client visibility</div>
+            <div class="arrow">&darr; Resolved by</div>
+          </div>
+          <div>
+            <div class="fix-tag">Platform feature</div>
+            <div class="fix-name">Client self-service portal</div>
+            <div class="fix-detail">Every applicant gets a secure dashboard showing real-time application status, uploaded documents, signed loan contracts, and a full notification history. Zero phone calls needed.</div>
+          </div>
+        </div>
+      
+        <div class="fix-row">
+          <div>
+            <div class="issue-tag">Current state</div>
+            <div class="issue-name">Ad-hoc compliance trail</div>
+            <div class="arrow">&darr; Resolved by</div>
+          </div>
+          <div>
+            <div class="fix-tag">Platform feature</div>
+            <div class="fix-name">Full NCA/NCR audit log on every application</div>
+            <div class="fix-detail">Every status change, admin action, credit check, document verification, and contract signing is time-stamped and stored in an immutable audit log — fully exportable for NCR inspection.</div>
+          </div>
+        </div>
+      
+        <div class="fix-row">
+          <div>
+            <div class="issue-tag">Current state</div>
+            <div class="issue-name">Insecure document collection</div>
+            <div class="arrow">&darr; Resolved by</div>
+          </div>
+          <div>
+            <div class="fix-tag">Platform feature</div>
+            <div class="fix-name">Supabase Storage with access-controlled upload</div>
+            <div class="fix-detail">Payslips, bank statements, and ID documents are uploaded directly to encrypted Supabase Storage buckets with per-user access policies, POPIA-compliant retention, and no third-party exposure.</div>
+          </div>
+        </div>
+      
+        <div class="fix-row">
+          <div>
+            <div class="issue-tag">Current state</div>
+            <div class="issue-name">No automated notifications</div>
+            <div class="arrow">&darr; Resolved by</div>
+          </div>
+          <div>
+            <div class="fix-tag">Platform feature</div>
+            <div class="fix-name">Email + SMS notification engine</div>
+            <div class="fix-detail">Transactional emails via Resend and SMS via BulkSMS are triggered automatically at every lifecycle stage — application received, approved, contract sent, DebiCheck initiated, and disbursement confirmed.</div>
+          </div>
+        </div>
+      
+        <div class="fix-row">
+          <div>
+            <div class="issue-tag">Current state</div>
+            <div class="issue-name">Zero portfolio analytics</div>
+            <div class="arrow">&darr; Resolved by</div>
+          </div>
+          <div>
+            <div class="fix-tag">Platform feature</div>
+            <div class="fix-name">Admin analytics dashboard</div>
+            <div class="fix-detail">A real-time admin dashboard displays total applications, approval rate, active loan portfolio value, repaid collections, monthly trend charts, and a full application pipeline — updated on every page load.</div>
+          </div>
+        </div>
+      
+    </div>
+    <div class="callout" style="margin-top: 7mm;">
+      <div class="callout-label">Compliance foundation</div>
+      <div class="callout-body"><b>Built for the NCA from day one.</b> Every feature &mdash; from the pre-agreement statement in the application form to the e-signed loan contract and the DebiCheck mandate &mdash; has been designed to satisfy the requirements of the National Credit Act 34 of 2005. NCR registration <b>NCRCP18260</b> appears on all client-facing documents.</div>
+    </div>
+  </section>
+
+  <!-- PAGE 4 · IMPACT + TIMELINE -->
+  <section class="page">
+    <div class="brand-strip">
+      <div><div class="brand-name">Philani <span>Finance</span></div><div class="brand-sub">Proposal &middot; Impact &amp; roadmap</div></div>
+      <div class="page-num">04 &middot; The outcome</div>
+    </div>
+    <div class="section-kicker">03 &middot; What this means for the business</div>
+    <h2 class="section-title">Expected operational impact.</h2>
+    <p class="section-lead">Based on the shift from manual to fully digital lending workflows at comparable South African micro-lenders. The platform is already built &mdash; these outcomes are available from day one of go-live.</p>
+    <div class="impact">
+      
+        <div class="impact-tile">
+          <div class="label">Application processing time</div>
+          <div class="value">Days → Hours</div>
+          <div class="why">Fully digital intake, automated validation, and instant document upload eliminate the manual data-entry bottleneck. Applications can be reviewed and decided within hours of submission.</div>
+        </div>
+      
+        <div class="impact-tile">
+          <div class="label">Staff admin burden</div>
+          <div class="value">−60 to −80%</div>
+          <div class="why">Automated status notifications, self-service client portal, and digital document management eliminate the majority of inbound follow-up calls, manual updates, and physical file handling.</div>
+        </div>
+      
+        <div class="impact-tile">
+          <div class="label">Compliance readiness</div>
+          <div class="value">Audit-ready at all times</div>
+          <div class="why">Every lending decision, contract signature, credit check, and communication is logged with timestamps and linked to the application. NCR inspection or dispute resolution requires zero manual document retrieval.</div>
+        </div>
+      
+        <div class="impact-tile">
+          <div class="label">Client trust & retention</div>
+          <div class="value">Measurably higher</div>
+          <div class="why">Instant notifications, real-time status visibility, and a professional client portal dramatically improve the borrower experience — differentiating Philani Financial Services from informal lenders.</div>
+        </div>
+      
+    </div>
+    <div class="section-kicker">04 &middot; How we get there</div>
+    <h2 class="section-title" style="font-size: 18pt; margin-bottom: 4mm;">Four weeks to full go-live.</h2>
+    <div class="timeline">
+      
+        <div class="time-row">
+          <div class="wk">Week 1</div>
+          <div>
+            <div class="t">Design sign-off & requirements lock</div>
+            <div class="d">Final review of design deck. Confirm admin user roles, email/SMS provider credentials, domain, and NCR compliance requirements.</div>
+          </div>
+        </div>
+      
+        <div class="time-row">
+          <div class="wk">Week 2</div>
+          <div>
+            <div class="t">Frontend build</div>
+            <div class="d">Landing page, multi-step application form, and client portal built and connected to Supabase backend.</div>
+          </div>
+        </div>
+      
+        <div class="time-row">
+          <div class="wk">Week 3</div>
+          <div>
+            <div class="t">Backend, admin dashboard & integrations</div>
+            <div class="d">Admin analytics dashboard, notification engine (Resend + BulkSMS), loan contract system, and DebiCheck integration.</div>
+          </div>
+        </div>
+      
+        <div class="time-row">
+          <div class="wk">Week 4</div>
+          <div>
+            <div class="t">QA, compliance review & launch</div>
+            <div class="d">Cross-device testing, NCR compliance walkthrough, Supabase production hardening, DNS cutover, zero-downtime go-live.</div>
+          </div>
+        </div>
+      
+        <div class="time-row">
+          <div class="wk">Post-launch</div>
+          <div>
+            <div class="t">30 days complimentary support</div>
+            <div class="d">Bug fixes, minor adjustments, performance monitoring, and staff training — included at no extra cost.</div>
+          </div>
+        </div>
+      
+    </div>
+  </section>
+
+  <!-- PAGE 5 · CLOSING -->
+  <section class="page">
+    <div class="brand-strip">
+      <div><div class="brand-name">Philani <span>Finance</span></div><div class="brand-sub">Proposal &middot; Next steps</div></div>
+      <div class="page-num">05 &middot; Close</div>
+    </div>
+    <div class="section-kicker">05 &middot; Where we go from here</div>
+    <h2 class="section-title">Ready when you are.</h2>
+    <p class="section-lead">The platform is built, tested, and live-ready. A complete design deck and working preview are available on request. The full cost of the work is itemised in the accompanying quotation (PFS-QUOTE-2026-001).</p>
+    <div class="close">
+      <h3>What happens next</h3>
+      <p>Proposal sign-off triggers a four-week go-live process covering environment setup, data migration from current processes, staff onboarding, compliance walkthrough, and DNS launch. The first 30 days of post-launch support are included at no extra cost.</p>
+      <div class="cta">
+        <div><b>Investment</b>Itemised in quotation PFS-QUOTE-2026-001</div>
+        <div><b>Start date</b>Within 7 days of proposal acceptance</div>
+      </div>
+      <div class="signature">Ntuthuko Smith &middot; ntuthukosmith10@gmail.com &middot; +27 67 711 5581</div>
+    </div>
+    <div class="quote-bar">
+      A lending business that runs on paper runs on luck. A digital platform runs on data, compliance, and client trust.
+      <span class="by">&mdash; Proposal close</span>
+    </div>
+  </section>
+
+</body></html>

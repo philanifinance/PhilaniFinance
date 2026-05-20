@@ -1,0 +1,439 @@
+// Generates a comprehensive design deck PDF for Philani Financial Services.
+// Captures every view: landing, how it works, FAQ, apply form, client dashboard,
+// admin dashboard (analytics, queue, and application detail).
+//
+// Prerequisites:
+//   1. Dev server running: npm run dev
+//   2. Add to your .env file:
+//        DEMO_ADMIN_EMAIL=your-admin@email.com
+//        DEMO_ADMIN_PASSWORD=yourpassword
+//   3. Run: node scripts/generate-design-pdf.mjs
+
+import puppeteer from "puppeteer";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const OUT_DIR = path.resolve(__dirname, "..", "design");
+const SHOT_DIR = path.join(OUT_DIR, "shots");
+const BASE = "http://localhost:5173";
+const SUPABASE_URL = "https://wmpfweskrnliqwkqkpoq.supabase.co";
+const STORAGE_KEY = "sb-wmpfweskrnliqwkqkpoq-auth-token";
+
+const DV = { width: 1440, height: 900, deviceScaleFactor: 2 };
+const MV = { width: 393,  height: 852, deviceScaleFactor: 3, isMobile: true, hasTouch: true };
+
+// ── Env & Auth helpers ────────────────────────────────────────────────
+
+async function loadEnvFiles() {
+  for (const file of [".env", ".env.local"]) {
+    try {
+      const content = await fs.readFile(path.resolve(__dirname, "..", file), "utf8");
+      for (const line of content.split("\n")) {
+        const t = line.trim();
+        if (!t || t.startsWith("#")) continue;
+        const eq = t.indexOf("=");
+        if (eq === -1) continue;
+        const key = t.slice(0, eq).trim();
+        const val = t.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+        if (!process.env[key]) process.env[key] = val;
+      }
+    } catch {}
+  }
+}
+
+async function supabaseSignIn(email, password, anonKey) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": anonKey },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(`Auth failed (${res.status}): ${await res.text()}`);
+  return res.json();
+}
+
+async function injectSession(page, session) {
+  const value = {
+    access_token:  session.access_token,
+    token_type:    session.token_type || "bearer",
+    expires_in:    session.expires_in || 3600,
+    expires_at:    Math.floor(Date.now() / 1000) + (session.expires_in || 3600),
+    refresh_token: session.refresh_token,
+    user:          session.user,
+  };
+  await page.evaluate((k, v) => localStorage.setItem(k, JSON.stringify(v)), STORAGE_KEY, value);
+}
+
+async function appNavigate(page, target, delay = 2000) {
+  await page.evaluate((p) => { if (window.__appNavigate) window.__appNavigate(p); }, target);
+  await new Promise(r => setTimeout(r, delay));
+}
+
+async function clickByText(page, text) {
+  await page.evaluate((t) => {
+    const btn = [...document.querySelectorAll("button")].find(b => b.textContent?.trim().includes(t));
+    if (btn) btn.click();
+  }, text);
+}
+
+async function shot(page, name) {
+  const file = path.join(SHOT_DIR, `${name}.png`);
+  await page.screenshot({ path: file, fullPage: false });
+  return `shots/${name}.png`;
+}
+
+async function ensureDirs() {
+  await fs.mkdir(SHOT_DIR, { recursive: true });
+}
+
+// ── Public page capture (desktop + mobile) ────────────────────────────
+
+async function capturePublic(browser) {
+  const s = {};
+  const page = await browser.newPage();
+
+  const scrollTo = async (id) => {
+    await page.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      if (el) el.scrollIntoView({ behavior: "instant", block: "start" });
+    }, id);
+    await new Promise(r => setTimeout(r, 900));
+  };
+
+  const go = async (url) => {
+    await page.goto(url, { waitUntil: "networkidle0", timeout: 60_000 });
+    await new Promise(r => setTimeout(r, 1200));
+  };
+
+  console.log("  Landing hero…");
+  await page.setViewport(DV);    await go(BASE);
+  s.heroD = await shot(page, "hero_desktop");
+  await page.setViewport(MV);    await go(BASE);
+  s.heroM = await shot(page, "hero_mobile");
+
+  console.log("  How It Works…");
+  await page.setViewport(DV);    await go(BASE);
+  await scrollTo("#how-it-works");
+  s.hiwD = await shot(page, "hiw_desktop");
+  await page.setViewport(MV);    await go(BASE);
+  await scrollTo("#how-it-works");
+  s.hiwM = await shot(page, "hiw_mobile");
+
+  console.log("  FAQ & CTA…");
+  await page.setViewport(DV);    await go(BASE);
+  await scrollTo("#faq");
+  s.faqD = await shot(page, "faq_desktop");
+  await page.setViewport(MV);    await go(BASE);
+  await scrollTo("#faq");
+  s.faqM = await shot(page, "faq_mobile");
+
+  await page.close();
+  return s;
+}
+
+// ── Authenticated view capture ─────────────────────────────────────────
+
+async function captureAuth(browser, session) {
+  const s = {};
+  const page = await browser.newPage();
+  await page.setViewport({ ...DV, deviceScaleFactor: 1.5 });
+
+  // Inject session and reload
+  await page.goto(BASE, { waitUntil: "domcontentloaded" });
+  await injectSession(page, session);
+  await page.reload({ waitUntil: "networkidle0" });
+  console.log("  Waiting for auth + role fetch…");
+  await new Promise(r => setTimeout(r, 4500)); // allow Supabase getSession + profiles query
+
+  // ── Admin: top analytics (dark header + metric cards + pipeline chart) ──
+  console.log("  Admin analytics…");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await new Promise(r => setTimeout(r, 400));
+  s.adminAnalytics = await shot(page, "admin_analytics");
+
+  // ── Admin: queue table (scroll past the analytics section) ──
+  console.log("  Admin queue…");
+  await page.evaluate(() => window.scrollTo(0, 680));
+  await new Promise(r => setTimeout(r, 400));
+  s.adminQueue = await shot(page, "admin_queue");
+
+  // ── Admin: application detail ──
+  console.log("  Admin detail…");
+  const opened = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll("button")].find(b => b.textContent?.trim() === "Review");
+    if (btn) { btn.click(); return true; }
+    const row = document.querySelector("tbody tr");
+    if (row) { row.click(); return true; }
+    return false;
+  });
+  if (opened) {
+    await new Promise(r => setTimeout(r, 2500));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await new Promise(r => setTimeout(r, 400));
+    s.adminDetail = await shot(page, "admin_detail");
+  } else {
+    console.warn("  ⚠ No application rows found — skipping detail view.");
+  }
+
+  // ── Application form (navigate home → click Apply Now) ──
+  console.log("  Application form…");
+  await appNavigate(page, "home", 1500);
+  await clickByText(page, "Apply Now");
+  await new Promise(r => setTimeout(r, 1500));
+  await page.evaluate(() => window.scrollTo(0, 0));
+  s.applyForm = await shot(page, "apply_form");
+
+  // ── Client dashboard — Tracker tab ──
+  console.log("  Client dashboard (tracker)…");
+  await appNavigate(page, "dashboard", 2800);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  s.dashTracker = await shot(page, "dashboard_tracker");
+
+  // ── Client dashboard — Loan History tab ──
+  console.log("  Client dashboard (history)…");
+  await clickByText(page, "Loan History");
+  await new Promise(r => setTimeout(r, 900));
+  s.dashHistory = await shot(page, "dashboard_history");
+
+  // ── Client dashboard — My Profile tab ──
+  console.log("  Client dashboard (profile)…");
+  await clickByText(page, "My Profile");
+  await new Promise(r => setTimeout(r, 900));
+  s.dashProfile = await shot(page, "dashboard_profile");
+
+  await page.close();
+  return s;
+}
+
+function renderHTML(pubSections, authSections) {
+  const total = 2 + pubSections.length * 2 + authSections.length;
+  let pageIdx = 0;
+  const pn = () => `${String(++pageIdx).padStart(2,"0")} / ${String(total).padStart(2,"0")}`;
+
+  const css = `
+    @page { size: A3 landscape; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; color: #0f172a; background: #f8fafc; }
+    h1, h2, h3 { font-family: 'Poppins', sans-serif; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+    .page { width: 420mm; height: 297mm; padding: 18mm 22mm; page-break-after: always; position: relative; background: #f8fafc; overflow: hidden; }
+    .page:last-child { page-break-after: auto; }
+    .page-number { position: absolute; top: 18mm; right: 22mm; font-size: 9pt; letter-spacing: 0.25em; color: rgba(15,23,42,0.38); text-transform: uppercase; font-family: 'Inter', sans-serif; }
+    .brand { position: absolute; top: 18mm; left: 22mm; display: flex; flex-direction: column; }
+    .brand-name { font-family: 'Poppins', sans-serif; font-size: 14pt; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; line-height: 1; }
+    .brand-name span { color: #22c55e; }
+    .brand-sub { font-size: 7pt; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(15,23,42,0.45); margin-top: 1.5mm; font-family: 'Inter', sans-serif; }
+    /* Cover */
+    .cover { background: #0f172a; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 22mm 28mm; }
+    .cover .brand { position: static; margin-bottom: 14mm; }
+    .cover .brand-name { color: #fff; font-size: 16pt; }
+    .cover .tag { font-size: 9pt; letter-spacing: 0.32em; text-transform: uppercase; color: #22c55e; margin-bottom: 8mm; font-family: 'Inter', sans-serif; font-weight: 700; }
+    .cover h1 { font-size: 50pt; line-height: 1.06; color: #fff; max-width: 300mm; margin-bottom: 10mm; }
+    .cover h1 span { color: #22c55e; }
+    .cover .sub { font-size: 12pt; font-weight: 300; color: rgba(255,255,255,0.6); max-width: 220mm; line-height: 1.65; }
+    .cover .pill { display: inline-flex; align-items: center; gap: 2mm; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; font-size: 8pt; padding: 1.5mm 4mm; border-radius: 99pt; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; margin-top: 11mm; font-family: 'Inter', sans-serif; }
+    .cover .meta { position: absolute; bottom: 18mm; left: 28mm; right: 28mm; display: flex; justify-content: space-between; font-size: 8pt; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.28); font-family: 'Inter', sans-serif; }
+    /* Section header */
+    .section-header { margin-bottom: 8mm; }
+    .section-header .kicker { font-size: 8pt; letter-spacing: 0.3em; text-transform: uppercase; color: #22c55e; margin-bottom: 3mm; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .section-header h2 { font-size: 30pt; color: #0f172a; line-height: 1.1; }
+    .section-header .desc { font-size: 10pt; color: rgba(15,23,42,0.58); margin-top: 4mm; font-weight: 400; max-width: 200mm; line-height: 1.65; }
+    /* Layout */
+    .layout { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12mm; align-items: flex-start; margin-top: 4mm; height: calc(100% - 45mm); }
+    .frame { background: white; border-radius: 6pt; box-shadow: 0 10pt 36pt -10pt rgba(15,23,42,0.2); overflow: hidden; border: 1px solid rgba(15,23,42,0.07); }
+    .frame-header { display: flex; align-items: center; gap: 6pt; padding: 5pt 9pt; background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 7pt; color: rgba(255,255,255,0.4); }
+    .dot { width: 7pt; height: 7pt; border-radius: 50%; display: inline-block; }
+    .dot.r { background: #FF6B5B; } .dot.y { background: #FFC24C; } .dot.g { background: #22c55e; }
+    .frame-url { margin-left: 8pt; font-family: Menlo, Consolas, monospace; font-size: 7pt; color: rgba(255,255,255,0.38); }
+    .frame-body { background: #f8fafc; }
+    .desktop-wrap, .mobile-wrap { display: flex; flex-direction: column; height: 100%; }
+    .desktop-wrap .caption, .mobile-wrap .caption { font-size: 7pt; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(15,23,42,0.48); margin-bottom: 3mm; font-weight: 600; font-family: 'Inter', sans-serif; }
+    .desktop-img { width: 100%; display: block; }
+    .desktop-scroll { max-height: 195mm; overflow: hidden; }
+    .mobile-frame { width: 78mm; margin: 0 auto; border: 2.5pt solid #0f172a; border-radius: 10pt; padding: 3pt; background: #0f172a; box-shadow: 0 8pt 24pt -6pt rgba(15,23,42,0.45); }
+    .mobile-inner { max-height: 175mm; overflow: hidden; border-radius: 7pt; background: #f8fafc; }
+    .mobile-img { width: 100%; display: block; }
+    .notes { margin-top: 8mm; padding: 6mm 7mm; background: white; border-left: 2.5pt solid #22c55e; font-size: 9.5pt; line-height: 1.6; color: rgba(15,23,42,0.72); border-radius: 0 4pt 4pt 0; }
+    .notes b { color: #0f172a; font-weight: 700; }
+    .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: 8mm; }
+    .spec { padding: 5mm 6mm; background: white; border-radius: 4pt; border: 1px solid rgba(15,23,42,0.07); }
+    .spec .k { font-size: 7pt; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(15,23,42,0.48); margin-bottom: 2mm; font-weight: 600; }
+    .spec .v { font-size: 10.5pt; color: #0f172a; font-weight: 600; font-family: 'Poppins', sans-serif; }
+    .palette { display: flex; gap: 8mm; margin-top: 10mm; }
+    .swatch { flex: 1; }
+    .swatch .chip { width: 100%; height: 36mm; border-radius: 4pt; }
+    .swatch .lbl { margin-top: 3mm; font-size: 9pt; font-weight: 600; color: rgba(255,255,255,0.9); }
+    .swatch .hex { font-family: Menlo, Consolas, monospace; font-size: 8pt; color: rgba(255,255,255,0.4); margin-top: 1mm; }
+    .system-page { background: #0f172a; }
+    .system-page .section-header .kicker { color: #22c55e; }
+    .system-page .section-header h2 { color: white; }
+    .system-page .section-header .desc { color: rgba(255,255,255,0.5); }
+    .system-page .spec { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+    .system-page .spec .k { color: rgba(255,255,255,0.4); }
+    .system-page .spec .v { color: white; }
+    .system-page .brand-name { color: white; }
+    .system-page .brand-sub { color: rgba(255,255,255,0.3); }
+    .system-page .page-number { color: rgba(255,255,255,0.25); }
+  `;
+
+  const cover = `
+    <section class="page cover">
+      <div class="brand">
+        <div class="brand-name">Philani <span>Finance</span></div>
+      </div>
+      <p class="tag">Digital Lending Platform &middot; Design Deck</p>
+      <h1>Fast, fair credit.<br/><span>Built for South Africa.</span></h1>
+      <p class="sub">A design presentation for Philani Financial Services &mdash; showcasing the client-facing landing page, multi-step loan application portal, and admin analytics dashboard across desktop and mobile. Built with React 18, TypeScript, Tailwind CSS and Supabase.</p>
+      <div class="pill">NCR Reg: NCRCP18260 &middot; NCA &amp; POPIA Compliant</div>
+      <div class="meta">
+        <span>3663 Mtshilibe Street, Ratanda, Heidelberg, 1441</span>
+        <span>013 752 2478 &middot; info@philanifinance.co.za</span>
+      </div>
+    </section>
+  `;
+
+  const system = `
+    <section class="page system-page">
+      <div class="brand"><div class="brand-name">Philani <span>Finance</span></div><div class="brand-sub">Design System</div></div>
+      <div class="page-number">02 / ${2 + sections.length * 2}</div>
+      <div class="section-header" style="margin-top: 20mm;">
+        <div class="kicker">01 &middot; Foundations</div>
+        <h2>The visual language</h2>
+        <p class="desc">A premium, trust-first palette anchored in deep navy and brand green &mdash; projecting financial authority while remaining approachable. Poppins ExtraBold for headlines, Inter for crisp body copy and data. Subtle glass surfaces, animated counters, and generous whitespace convey confidence.</p>
+      </div>
+      <div class="palette">
+        <div class="swatch"><div class="chip" style="background:#0f172a;"></div><div class="lbl">Navy 950</div><div class="hex">#0f172a</div></div>
+        <div class="swatch"><div class="chip" style="background:#1e3a5f;"></div><div class="lbl">Navy 700</div><div class="hex">#1e3a5f</div></div>
+        <div class="swatch"><div class="chip" style="background:#22c55e;"></div><div class="lbl">Brand Green</div><div class="hex">#22c55e</div></div>
+        <div class="swatch"><div class="chip" style="background:#f8fafc; border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">Slate 50</div><div class="hex">#f8fafc</div></div>
+        <div class="swatch"><div class="chip" style="background:#ffffff; border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">White</div><div class="hex">#ffffff</div></div>
+      </div>
+      <div class="specs" style="margin-top: 8mm;">
+        <div class="spec"><div class="k">Display Font</div><div class="v" style="font-family:'Poppins',sans-serif;font-weight:800;">Poppins &middot; ExtraBold 800</div></div>
+        <div class="spec"><div class="k">Body Font</div><div class="v">Inter &middot; 300 / 400 / 500 / 600</div></div>
+        <div class="spec"><div class="k">Backend</div><div class="v">Supabase &middot; PostgreSQL &middot; Edge Functions</div></div>
+        <div class="spec"><div class="k">Tech Stack</div><div class="v">React 18 &middot; TypeScript &middot; Tailwind &middot; Vite</div></div>
+      </div>
+    </section>
+  `;
+
+  const pages = sections.map((s, i) => `
+    <section class="page">
+      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">${s.label}</div></div>
+      <div class="page-number">${String(3 + i * 2).padStart(2,"0")} / ${2 + sections.length * 2}</div>
+      <div class="section-header" style="margin-top: 20mm;">
+        <div class="kicker">0${i + 2} &middot; ${s.label}</div>
+        <h2>${s.heading}</h2>
+        <p class="desc">${s.desc}</p>
+      </div>
+      <div class="layout">
+        <div class="desktop-wrap">
+          <div class="caption">Desktop &middot; 1440 &times; 900</div>
+          <div class="frame">
+            <div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za${s.path}</span></div>
+            <div class="frame-body desktop-scroll"><img class="desktop-img" src="${s.desktopShot}" /></div>
+          </div>
+        </div>
+        <div class="mobile-wrap">
+          <div class="caption">Mobile &middot; 393 &times; 852 (iPhone 15 Pro)</div>
+          <div class="mobile-frame">
+            <div class="mobile-inner"><img class="mobile-img" src="${s.mobileShot}" /></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="page">
+      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">${s.label} &middot; Notes</div></div>
+      <div class="page-number">${String(4 + i * 2).padStart(2,"0")} / ${2 + sections.length * 2}</div>
+      <div class="section-header" style="margin-top: 20mm;">
+        <div class="kicker">Design notes</div>
+        <h2>${s.heading}</h2>
+      </div>
+      <div class="notes">${s.notes}</div>
+      <div class="specs">${s.highlights.map((h) => `<div class="spec"><div class="k">${h.k}</div><div class="v">${h.v}</div></div>`).join("")}</div>
+    </section>
+  `).join("");
+
+  return `<!doctype html><html><head><meta charset="utf-8"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>${css}</style></head><body>${cover}${system}${pages}</body></html>`;
+}
+
+async function main() {
+  await ensureDirs();
+  console.log("Launching browser…");
+  const browser = await puppeteer.launch({ headless: "new" });
+
+  const captured = [];
+  for (const p of PAGES) {
+    console.log(`Capturing ${p.label}`);
+    const desktopShot = await capture(browser, p, DESKTOP);
+    const mobileShot = await capture(browser, p, MOBILE);
+    captured.push({ ...p, desktopShot, mobileShot });
+  }
+
+  // Narrative copy per section
+  const sections = [
+    {
+      ...captured[0],
+      heading: "Landing Page — the trust moment",
+      notes: `<b>Dark navy hero</b> with an embedded loan calculator — amount slider, term selector, and live repayment preview — anchors the above-the-fold experience. Animated stat counters (total loans, avg approval time, client satisfaction) build credibility on scroll.<br/><br/><b>TrustBar</b> presents key platform metrics with brand-green glows. <b>HowItWorks</b> uses a numbered four-step timeline. The <b>CtaBanner</b> is a cinematic full-bleed photo section with an NCR compliance badge and a single strong CTA. Every element is scroll-triggered with reveal animations.`,
+      highlights: [
+        { k: "Hero", v: "Loan calculator · Apply Now / Check Eligibility" },
+        { k: "Trust signals", v: "NCR NCRCP18260 · NCA & POPIA compliant" },
+        { k: "Header", v: "Transparent → solid navy on scroll" },
+        { k: "Animations", v: "Scroll reveal · animated stat counters" },
+      ],
+    },
+    {
+      ...captured[1],
+      heading: "How It Works — four steps to funds",
+      notes: `<b>Numbered step timeline</b> with icons, time estimates and color-coded cards walks applicants through the journey: Apply (2 min) → Verify → Approve → Payout (same day). A feature image with floating trust badges adds credibility without clutter.<br/><br/>The layout adapts cleanly to mobile — steps stack vertically and the image collapses gracefully below the timeline.`,
+      highlights: [
+        { k: "Steps", v: "Apply → Verify documents → Approve → Payout" },
+        { k: "Time estimates", v: "Avg 2 min application · Same-day payout" },
+        { k: "Mobile layout", v: "Vertical stack · full-width feature image" },
+        { k: "Animation", v: "Step-by-step scroll reveal" },
+      ],
+    },
+    {
+      ...captured[2],
+      heading: "FAQ & CTA — compliance and conversion",
+      notes: `<b>Accordion FAQ</b> with smooth expand/collapse answers common borrower questions around eligibility, repayment, and NCR compliance. Open state highlights in brand-green with chevron rotation provide clear visual feedback.<br/><br/>Below the FAQ sits the <b>CtaBanner</b> — a cinematic full-bleed conversion section with NCR compliance badge. The navy footer lists address, NCR registration, and all legal links.`,
+      highlights: [
+        { k: "FAQ", v: "Accordion · smooth height animation" },
+        { k: "Open state", v: "Brand-green border-left · box-shadow glow" },
+        { k: "Compliance", v: "NCR Reg NCRCP18260 · NCA reference" },
+        { k: "Footer", v: "Address · phone · legal links · NCA warning" },
+      ],
+    },
+  ];
+
+  const html = renderHTML(sections);
+  const htmlFile = path.join(OUT_DIR, "deck.html");
+  await fs.writeFile(htmlFile, html, "utf8");
+
+  console.log("Rendering PDF…");
+  const pdfPage = await browser.newPage();
+  await pdfPage.goto("file:///" + htmlFile.replaceAll("\\", "/"), { waitUntil: "networkidle0" });
+  const pdfPath = path.join(OUT_DIR, "Philani-Finance_Design-Deck.pdf");
+  await pdfPage.pdf({
+    path: pdfPath,
+    width: "420mm",
+    height: "297mm",
+    printBackground: true,
+    preferCSSPageSize: true,
+  });
+  await pdfPage.close();
+
+  await browser.close();
+  const stat = await fs.stat(pdfPath);
+  console.log(`\n✓ Deck ready: ${pdfPath}`);
+  console.log(`  Size: ${(stat.size / 1024 / 1024).toFixed(2)} MB`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

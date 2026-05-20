@@ -76,7 +76,7 @@ function loanApprovedEmailHtml(data: {
       Hi <strong>${data.firstName}</strong>,
     </p>
     <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
-      Great news! Your ezaga loan application has been <strong style="color:#22c55e;">approved</strong>. Here are your loan details:
+      Great news! Your Philani Financial Services loan application has been <strong style="color:#22c55e;">approved</strong>. Here are your loan details:
     </p>
     <!-- Loan Details Box -->
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:0 0 24px;">
@@ -117,13 +117,14 @@ function loanApprovedEmailHtml(data: {
       </td></tr>
     </table>
     <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.5;text-align:center;">
-      If you have any questions, reply to this email or contact us at support@ezaga.co.za
+      If you have any questions, reply to this email or call us on <a href="tel:+27137522478" style="color:#22c55e;">013 752 2478</a>.
     </p>
   </td></tr>
   <!-- Footer -->
   <tr><td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
     <p style="margin:0;color:#94a3b8;font-size:11px;">
-      ezaga Loans (Pty) Ltd &bull; NCR Registered Lender &bull; POPIA Compliant<br>
+      Philani Financial Services &bull; NCR Reg: NCRCP18260 &bull; NCA &amp; POPIA Compliant<br>
+      3663 Mtshilibe Street, Ratanda, Heidelberg, 1441 &bull; 013 752 2478<br>
       This is an automated notification. Please do not reply directly.
     </p>
   </td></tr>
@@ -168,7 +169,7 @@ function debiCheckEmailHtml(data: {
       Hi <strong>${data.firstName}</strong>,
     </p>
     <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
-      A <strong>DebiCheck debit order mandate</strong> from <strong>ezaga Loans</strong> has been sent to your bank.
+      A <strong>DebiCheck debit order mandate</strong> from <strong>Philani Financial Services</strong> has been sent to your bank.
       You need to <strong style="color:#2563eb;">approve it on your banking app</strong> so we can release your loan funds.
     </p>
     <!-- Mandate Details -->
@@ -200,7 +201,7 @@ function debiCheckEmailHtml(data: {
       <tr><td style="height:8px;"></td></tr>
       <tr><td style="padding:12px 16px;background:#f8fafc;border-radius:10px;">
         <p style="margin:0 0 8px;color:#1e293b;font-size:13px;font-weight:700;">📱 FNB:</p>
-        <p style="margin:0;color:#475569;font-size:13px;line-height:1.6;">Open the FNB App → Go to <em>My Products → Accounts → Debit Orders → Pending Approvals</em> → Approve the ezaga mandate</p>
+        <p style="margin:0;color:#475569;font-size:13px;line-height:1.6;">Open the FNB App → Go to <em>My Products → Accounts → Debit Orders → Pending Approvals</em> → Approve the Philani Financial Services mandate</p>
       </td></tr>
       <tr><td style="height:8px;"></td></tr>
       <tr><td style="padding:12px 16px;background:#f8fafc;border-radius:10px;">
@@ -217,13 +218,14 @@ function debiCheckEmailHtml(data: {
       </td></tr>
     </table>
     <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.5;text-align:center;">
-      Need help? Call us at 012 345 6789 or reply to this email.
+      Need help? Call us at <a href="tel:+27137522478" style="color:#2563eb;">013 752 2478</a> or reply to this email.
     </p>
   </td></tr>
   <!-- Footer -->
   <tr><td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
     <p style="margin:0;color:#94a3b8;font-size:11px;">
-      ezaga Loans (Pty) Ltd &bull; NCR Registered Lender &bull; POPIA Compliant<br>
+      Philani Financial Services &bull; NCR Reg: NCRCP18260 &bull; NCA &amp; POPIA Compliant<br>
+      3663 Mtshilibe Street, Ratanda, Heidelberg, 1441 &bull; 013 752 2478<br>
       This is an automated notification. Please do not reply directly.
     </p>
   </td></tr>
@@ -258,17 +260,17 @@ function debiCheckReminderEmailHtml(data: {
     </p>
     <p style="margin:0 0 20px;color:#475569;font-size:14px;line-height:1.6;">
       We noticed you haven't approved the DebiCheck mandate for <strong>${fmtZar(data.instalmentAmount)}</strong> yet.
-      Please open your <strong>${data.bankName}</strong> banking app and approve the pending mandate from <strong>ezaga Loans</strong> as soon as possible.
+      Please open your <strong>${data.bankName}</strong> banking app and approve the pending mandate from <strong>Philani Financial Services</strong> as soon as possible.
     </p>
     <p style="margin:0 0 20px;color:#dc2626;font-size:14px;font-weight:600;">
       If the mandate expires, we'll need to send a new one — which will delay the release of your funds.
     </p>
     <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;">
-      Need help? Call us at 012 345 6789 or reply to this email.
+      Need help? Call us at <a href="tel:+27137522478" style="color:#dc2626;">013 752 2478</a> or reply to this email.
     </p>
   </td></tr>
   <tr><td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;text-align:center;">
-    <p style="margin:0;color:#94a3b8;font-size:11px;">ezaga Loans (Pty) Ltd &bull; NCR Registered Lender</p>
+    <p style="margin:0;color:#94a3b8;font-size:11px;">Philani Financial Services &bull; NCR Reg: NCRCP18260 &bull; NCA Compliant</p>
   </td></tr>
 </table>
 </td></tr>
@@ -279,15 +281,15 @@ function debiCheckReminderEmailHtml(data: {
 // ── SMS Templates (max ~160 chars) ───────────────────────────
 
 function loanApprovedSms(firstName: string, dashboardUrl: string): string {
-  return `Hi ${firstName}, Great news! Your ezaga loan application has been APPROVED. Check your email for details or log in: ${dashboardUrl}`;
+  return `Hi ${firstName}, great news! Your Philani Financial Services loan application has been APPROVED. Check your email or log in: ${dashboardUrl}`;
 }
 
 function debiCheckSms(firstName: string): string {
-  return `URGENT: ${firstName}, a DebiCheck request from ezaga Loans was sent to your bank. Open your banking app NOW to Accept the mandate so we can release your funds.`;
+  return `URGENT: ${firstName}, a DebiCheck request from Philani Financial Services was sent to your bank. Open your banking app NOW and Accept the mandate to release your funds.`;
 }
 
 function debiCheckReminderSms(firstName: string): string {
-  return `REMINDER: ${firstName}, your DebiCheck mandate from ezaga Loans is still pending. Please open your banking app and approve it now to avoid delays.`;
+  return `REMINDER: ${firstName}, your DebiCheck mandate from Philani Financial Services is still pending. Open your banking app and approve it now to avoid delays.`;
 }
 
 // ── Send Email via Resend ────────────────────────────────────
@@ -307,7 +309,7 @@ async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `ezaga Loans <${fromEmail}>`,
+        from: `Philani Financial Services <${fromEmail}>`,
         to: [to],
         subject,
         html,
