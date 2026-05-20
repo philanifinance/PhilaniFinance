@@ -4,7 +4,7 @@ import {
   ChevronRight, Loader2, RefreshCw, ArrowRight,
   Briefcase, Building2, CreditCard, Shield,
   Pencil, Save, X, AlertCircle, FolderOpen,
-  Download, ShieldCheck, Wifi, Pen
+  Download, ShieldCheck, Wifi, Pen, Banknote
 } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -36,6 +36,9 @@ interface LoanApplication {
   admin_notes: string | null;
   created_at: string;
   reviewed_at: string | null;
+  loan_disbursed_at: string | null;
+  loan_paid_at: string | null;
+  loan_lifecycle: 'approved' | 'disbursed' | 'repaid' | 'defaulted' | null;
 }
 
 interface AppDocument {
@@ -64,11 +67,12 @@ type Tab = 'tracker' | 'history' | 'documents' | 'profile';
 
 // ── Status config ────────────────────────────────────────────────────
 const statusSteps = [
-  { key: 'submitted', label: 'Submitted', icon: FileText },
-  { key: 'under_review', label: 'Under Review', icon: Eye },
-  { key: 'contract', label: 'Loan Contract', icon: Pen },
-  { key: 'debicheck', label: 'DebiCheck Auth', icon: ShieldCheck },
-  { key: 'decision', label: 'Decision', icon: CheckCircle },
+  { key: 'submitted',   label: 'Submitted',    icon: FileText },
+  { key: 'under_review',label: 'Under Review', icon: Eye },
+  { key: 'decision',    label: 'Decision',     icon: CheckCircle },
+  { key: 'contract',    label: 'Loan Contract',icon: Pen },
+  { key: 'debicheck',   label: 'DebiCheck',    icon: ShieldCheck },
+  { key: 'disbursed',   label: 'Disbursed',    icon: Banknote },
 ] as const;
 
 const statusConfig: Record<LoanApplication['status'], { label: string; color: string; bg: string; icon: React.ElementType }> = {
@@ -94,20 +98,23 @@ function fmtBytes(b: number) {
 
 function getProgressStep(
   status: LoanApplication['status'],
+  lifecycle?: string | null,
   contractStatus?: string,
   mandateStatus?: string,
 ): number {
   if (status === 'pending') return 1;
   if (status === 'under_review') return 2;
+  if (status === 'rejected') return 3;  // decision step, red
   if (status === 'approved') {
-    if (!contractStatus || contractStatus === 'pending_signature') return 3;
+    if (!contractStatus || contractStatus === 'pending_signature') return 4;
     if (contractStatus === 'signed') {
-      if (mandateStatus && ['mandate_submitted', 'pending_bank'].includes(mandateStatus)) return 4;
-      return 4;
+      if (mandateStatus && ['mandate_submitted','pending_bank'].includes(mandateStatus)) return 5;
+      if (lifecycle === 'disbursed' || lifecycle === 'repaid') return 6;
+      return 5;
     }
-    return 5;
+    return 4;
   }
-  return 5; // rejected also = decision step
+  return 3;
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -128,6 +135,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
   const [contract, setContract] = useState<ContractInfo | null>(null);
   const [contractModalOpen, setContractModalOpen] = useState(false);
   const [fullContract, setFullContract] = useState<LoanContractRecord | null>(null);
+  const [lifecycle, setLifecycle] = useState<string | null>(null);
   const [userDocs, setUserDocs] = useState<AppDocument[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
 
@@ -162,6 +170,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
       ]);
       setMandate(m as MandateInfo | null);
       setContract(c as ContractInfo | null);
+      setLifecycle(active.loan_lifecycle ?? null);
     }
     setLoading(false);
   }, [user.id]);
@@ -181,7 +190,10 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
   // Lazy-load docs only when that tab is opened
   useEffect(() => { if (tab === 'documents') fetchUserDocs(); }, [tab, fetchUserDocs]);
 
-  const activeApp = applications.find(a => a.status !== 'rejected') || applications[0] || null;
+  const activeApp = applications.find(a => ['pending','under_review','approved'].includes(a.status)) || applications[0] || null;
+
+  // Disable new application while a loan is disbursed but not yet repaid
+  const hasActiveLoan = !!activeApp && (activeApp.loan_lifecycle === 'disbursed');
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'tracker', label: 'Application Tracker', icon: FileText },
@@ -224,8 +236,11 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
               className="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </button>
-            <button onClick={onApply}
-              className="inline-flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md hover:shadow-green-500/20">
+            <button
+              onClick={hasActiveLoan ? undefined : onApply}
+              disabled={hasActiveLoan}
+              title={hasActiveLoan ? 'You have an active disbursed loan. New applications are disabled until repayment is confirmed.' : undefined}
+              className="inline-flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md hover:shadow-green-500/20">
               New Application <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -276,41 +291,56 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                   {/* Visual progress stepper */}
                   <div className="flex items-center justify-between mb-4">
                     {statusSteps.map((s, idx) => {
-                      const current = getProgressStep(activeApp.status, contract?.status, mandate?.status);
+                      const current = getProgressStep(activeApp.status, lifecycle, contract?.status, mandate?.status);
                       const isActive = idx + 1 <= current;
                       const isCurrent = idx + 1 === current;
-                      const Icon = s.icon;
-                      const isDebiCheck = s.key === 'debicheck';
-                      const isContractStep = s.key === 'contract';
-                      const isDeclined = activeApp.status === 'rejected' && s.key === 'decision';
-                      const isDebiWaiting = isDebiCheck && mandate && ['mandate_submitted', 'pending_bank'].includes(mandate.status);
-                      const isContractPending = isContractStep && contract && contract.status === 'pending_signature';
+                      const isDecisionStep = s.key === 'decision';
+                      const isApproved = isDecisionStep && activeApp.status === 'approved';
+                      const isRejected  = isDecisionStep && activeApp.status === 'rejected';
+                      const isDebiWaiting = s.key === 'debicheck' && mandate && ['mandate_submitted','pending_bank'].includes(mandate.status);
+                      const isContractPending = s.key === 'contract' && contract?.status === 'pending_signature';
+                      const isDisbursedStep = s.key === 'disbursed';
+                      const isDisbursed = isDisbursedStep && (lifecycle === 'disbursed' || lifecycle === 'repaid');
+
+                      let bgClass = 'bg-gray-100';
+                      if (isRejected)   bgClass = 'bg-red-500';
+                      else if (isApproved && isActive) bgClass = 'bg-[#22c55e]';
+                      else if (isCurrent) bgClass = 'bg-[#22c55e] shadow-lg shadow-green-500/30';
+                      else if (isActive)  bgClass = 'bg-[#22c55e]';
+
+                      let StepIcon = s.icon;
+                      let iconEl: React.ReactNode;
+                      if (isRejected)  iconEl = <XCircle className="w-5 h-5 text-white" />;
+                      else if (isApproved) iconEl = <CheckCircle className="w-5 h-5 text-white" />;
+                      else iconEl = <StepIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />;
+
+                      let label: string = s.label;
+                      if (isRejected)            label = 'Rejected';
+                      else if (isApproved)        label = 'Approved';
+                      else if (isDebiWaiting)     label = 'Awaiting Auth';
+                      else if (isContractPending) label = 'Sign Contract';
+
                       return (
                         <div key={s.key} className="flex items-center flex-1">
                           <div className="flex flex-col items-center flex-1">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all ${
-                              isDeclined ? 'bg-red-100' :
-                              isCurrent ? 'bg-[#22c55e] shadow-lg shadow-green-500/30' :
-                              isActive ? 'bg-[#22c55e]' : 'bg-gray-100'
-                            }`}>
-                              {isDeclined ? (
-                                <XCircle className="w-5 h-5 text-red-600" />
-                              ) : (
-                                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                              )}
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-2 transition-all ${bgClass}`}>
+                              {iconEl}
                             </div>
-                            <span className={`text-xs font-medium text-center ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
-                              {isDeclined ? 'Declined' : isDebiWaiting ? 'Awaiting Auth' : isContractPending ? 'Sign Contract' : s.label}
-                            </span>
+                            <span className={`text-[10px] font-medium text-center leading-tight ${
+                              isRejected ? 'text-red-600' : isActive ? 'text-gray-900' : 'text-gray-400'
+                            }`}>{label}</span>
                             {isDebiWaiting && (
-                              <span className="text-[10px] text-amber-600 font-medium animate-pulse">Check your banking app</span>
+                              <span className="text-[10px] text-amber-600 font-medium animate-pulse">Check banking app</span>
                             )}
                             {isContractPending && (
                               <span className="text-[10px] text-amber-600 font-medium animate-pulse">Action required</span>
                             )}
+                            {isDisbursed && lifecycle === 'repaid' && (
+                              <span className="text-[10px] text-green-600 font-medium">Repaid</span>
+                            )}
                           </div>
                           {idx < statusSteps.length - 1 && (
-                            <div className={`h-0.5 flex-1 mx-2 -mt-6 rounded-full ${idx + 1 < current ? 'bg-[#22c55e]' : 'bg-gray-200'}`} />
+                            <div className={`h-0.5 flex-1 mx-1 -mt-5 rounded-full ${idx + 1 < current ? 'bg-[#22c55e]' : 'bg-gray-200'}`} />
                           )}
                         </div>
                       );
@@ -384,6 +414,60 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                     <div>
                       <h3 className="font-bold text-blue-800">Loan Approved — Contract Coming Soon</h3>
                       <p className="text-sm text-blue-600 mt-1">Your loan has been approved. A loan agreement contract is being prepared for your signature. Check back shortly.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Active Loan Summary (disbursed) ───────────────── */}
+                {activeApp.loan_lifecycle === 'disbursed' && activeApp.loan_disbursed_at && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-200 flex items-center justify-center flex-shrink-0">
+                        <Banknote className="w-5 h-5 text-emerald-700" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-emerald-900">Active Loan — Funds Disbursed</h3>
+                        <p className="text-xs text-emerald-600 mt-0.5">
+                          Disbursed on {fmtDate(activeApp.loan_disbursed_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="bg-white rounded-xl p-4 border border-emerald-100">
+                        <p className="text-xs text-gray-500 mb-1">Amount Received</p>
+                        <p className="text-xl font-black text-emerald-700">{fmtZar(activeApp.loan_amount)}</p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 border border-emerald-100">
+                        <p className="text-xs text-gray-500 mb-1">Total Repayable</p>
+                        <p className="text-xl font-black text-gray-900">{fmtZar(activeApp.total_repayable)}</p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 border border-emerald-100">
+                        <p className="text-xs text-gray-500 mb-1">Repayment Due</p>
+                        <p className="font-bold text-gray-900">
+                          {fmtDate((() => { const d = new Date(activeApp.loan_disbursed_at!); d.setDate(d.getDate() + activeApp.loan_term_days); return d.toISOString(); })())}
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 border border-emerald-100">
+                        <p className="text-xs text-gray-500 mb-1">Term</p>
+                        <p className="font-bold text-gray-900">{activeApp.loan_term_days} days</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-emerald-700 mt-4 bg-emerald-100 rounded-xl px-4 py-3">
+                      Repayment will be collected via DebiCheck debit order on the due date. Ensure sufficient funds are available.
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Loan fully repaid ──────────────────────────────── */}
+                {activeApp.loan_lifecycle === 'repaid' && activeApp.loan_paid_at && (
+                  <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-start gap-3">
+                    <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-bold text-green-800">Loan Fully Repaid</h3>
+                      <p className="text-sm text-green-700 mt-1">
+                        Your loan of {fmtZar(activeApp.total_repayable)} was successfully repaid on {fmtDate(activeApp.loan_paid_at)}.
+                        You may now apply for a new loan.
+                      </p>
                     </div>
                   </div>
                 )}

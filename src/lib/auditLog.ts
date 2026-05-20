@@ -11,7 +11,11 @@ export type AuditAction =
   | 'debicheck_error'
   | 'debicheck_callback'
   | 'credit_check_performed'
-  | 'credit_check_error';
+  | 'credit_check_error'
+  | 'loan_disbursed'
+  | 'loan_repaid'
+  | 'contract_generated'
+  | 'contract_signed';
 
 export async function logAudit(
   action: AuditAction,
