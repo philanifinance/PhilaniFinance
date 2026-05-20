@@ -495,47 +495,40 @@ export default function ApplicationForm({
 
   if (submitted) {
     return (
-      <section id="apply" className="bg-[#f8fafc] py-20">
-        <div className="max-w-xl mx-auto px-4 text-center">
-          <div className="bg-white border border-[#22c55e]/30 rounded-2xl p-12 shadow-sm">
-            <CheckCircle className="w-16 h-16 text-[#22c55e] mx-auto mb-4" />
-            <h2 className="text-gray-900 font-black text-2xl mb-3">Application Submitted!</h2>
-            <p className="text-gray-600 leading-relaxed">
-              Thank you, <strong className="text-gray-900">{form.firstName}</strong>. We've received your application
-              for <strong className="text-[#22c55e]">{formatCurrency(loanAmount)}</strong> and
-              our team will review it shortly.
-            </p>
-            <p className="text-gray-500 text-sm mt-4">Redirecting to your dashboard...</p>
-            <div className="mt-4">
-              <Loader2 className="w-5 h-5 text-[#22c55e] animate-spin mx-auto" />
-            </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white border border-brand-200/40 rounded-3xl p-12 shadow-lg text-center max-w-md w-full">
+          <div className="w-16 h-16 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <CheckCircle className="w-8 h-8 text-brand-500" />
           </div>
+          <h2 className="font-display text-navy-900 font-extrabold text-2xl mb-3">Application Submitted!</h2>
+          <p className="text-navy-500 leading-relaxed">
+            Thank you, <strong className="text-navy-900">{form.firstName}</strong>. We've received your application
+            for <strong className="text-brand-600">{formatCurrency(loanAmount)}</strong> and our team will review it shortly.
+          </p>
+          <p className="text-navy-400 text-sm mt-4">Redirecting to your dashboard...</p>
+          <Loader2 className="w-5 h-5 text-brand-500 animate-spin mx-auto mt-4" />
         </div>
-      </section>
+      </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <section id="apply" className="bg-[#f8fafc] py-20">
-        <div className="max-w-xl mx-auto px-4 text-center">
-          <div className="bg-white border border-gray-200 rounded-2xl p-10 sm:p-12 shadow-sm">
-            <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
-              <Lock className="w-8 h-8 text-amber-500" />
-            </div>
-            <h2 className="text-gray-900 font-bold text-xl mb-3">Authentication Required</h2>
-            <p className="text-gray-600 leading-relaxed mb-6">
-              To protect your personal information and comply with NCR regulations, you must sign in or create an account before applying for a loan.
-            </p>
-            <button
-              onClick={onRequestAuth}
-              className="inline-flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-green-500/25"
-            >
-              Sign In to Apply
-            </button>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white border border-slate-200 rounded-3xl p-10 sm:p-12 shadow-lg text-center max-w-md w-full">
+          <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <Lock className="w-8 h-8 text-amber-500" />
           </div>
+          <h2 className="font-display text-navy-900 font-bold text-xl mb-3">Sign In to Apply</h2>
+          <p className="text-navy-500 leading-relaxed mb-6">
+            To protect your personal information and comply with NCR regulations, you must sign in or create an account before applying.
+          </p>
+          <button onClick={onRequestAuth}
+            className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-8 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-500/25">
+            Sign In to Apply
+          </button>
         </div>
-      </section>
+      </div>
     );
   }
 
@@ -549,34 +542,36 @@ export default function ApplicationForm({
   const loanCalc = calcLoan(loanAmount, loanTermDays);
 
   return (
-    <section id="apply" className="bg-[#f8fafc] py-20">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6">
-        <button
-          onClick={onBack}
-          className="mb-6 text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-1.5 transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" /> Back to Home
-        </button>
-        <div className="text-center mb-10">
-          <span className="text-[#22c55e] text-sm font-semibold uppercase tracking-wider">Ready to Apply?</span>
-          <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mt-2">Your Application</h2>
-          <p className="text-gray-600 mt-3">
-            Applying for <strong className="text-[#22c55e]">{formatCurrency(loanAmount)}</strong> over {loanTermDays} days
-            &middot; Total repayable: <strong>{formatCurrency(loanCalc.totalRepayable)}</strong>
+    <div id="apply" className="bg-slate-50 min-h-screen">
+      {/* Dark header */}
+      <div className="bg-navy-950 pt-20 pb-10">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6">
+          <button onClick={onBack}
+            className="mb-6 text-white/40 hover:text-white text-sm font-medium flex items-center gap-1.5 transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Back to Home
+          </button>
+          <span className="text-brand-400 text-xs font-bold uppercase tracking-[0.2em]">Ready to Apply?</span>
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white mt-2">Your Application</h2>
+          <p className="text-white/50 mt-2 text-sm">
+            Applying for <strong className="text-brand-400">{formatCurrency(loanAmount)}</strong> over {loanTermDays} days
+            · Total repayable: <strong className="text-white/80">{formatCurrency(loanCalc.totalRepayable)}</strong>
           </p>
         </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-16">
 
         {/* Step indicators */}
-        <div className="flex items-center justify-center gap-0 mb-10">
+        <div className="flex items-center justify-center gap-0 mb-8">
           {steps.map(({ num, label, icon: Icon }, idx) => (
             <div key={num} className="flex items-center">
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${step === num ? 'bg-[#22c55e] text-white' : step > num ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'bg-gray-100 text-gray-500'}`}>
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${step === num ? 'bg-brand-500 text-white' : step > num ? 'bg-brand-500/15 text-brand-700' : 'bg-slate-100 text-navy-400'}`}>
                 <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{label}</span>
                 <span className="sm:hidden">{num}</span>
               </div>
               {idx < steps.length - 1 && (
-                <div className={`w-8 h-px mx-1 transition-colors duration-300 ${step > num ? 'bg-[#22c55e]' : 'bg-gray-300'}`} />
+                <div className={`w-8 h-px mx-1 transition-colors duration-300 ${step > num ? 'bg-brand-500' : 'bg-slate-300'}`} />
               )}
             </div>
           ))}
@@ -590,10 +585,10 @@ export default function ApplicationForm({
           </div>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
           {step === 1 && (
             <div className="space-y-4">
-              <h3 className="text-gray-900 font-bold text-lg mb-5 flex items-center gap-2"><User className="w-5 h-5 text-[#22c55e]" /> Personal Details</h3>
+              <h3 className="font-display text-navy-900 font-bold text-lg mb-5 flex items-center gap-2"><User className="w-5 h-5 text-brand-500" /> Personal Details</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="First Name" value={form.firstName} onChange={v => update('firstName', v)} placeholder="Sipho" />
                 <Field label="Last Name" value={form.lastName} onChange={v => update('lastName', v)} placeholder="Dlamini" />
@@ -610,7 +605,7 @@ export default function ApplicationForm({
 
           {step === 2 && (
             <div className="space-y-4">
-              <h3 className="text-gray-900 font-bold text-lg mb-5 flex items-center gap-2"><Briefcase className="w-5 h-5 text-[#22c55e]" /> Employment Details</h3>
+              <h3 className="font-display text-navy-900 font-bold text-lg mb-5 flex items-center gap-2"><Briefcase className="w-5 h-5 text-brand-500" /> Employment Details</h3>
               <Field label="Employer Name" value={form.employerName} onChange={v => update('employerName', v)} placeholder="ABC Company (Pty) Ltd" />
               <Field label="Monthly Income (ZAR)" value={form.monthlyIncome} onChange={v => update('monthlyIncome', v.replace(/\D/g, ''))} placeholder="8500" type="text" inputMode="numeric" prefix="R" />
               <div>
@@ -618,7 +613,7 @@ export default function ApplicationForm({
                 <select
                   value={form.payDate}
                   onChange={e => update('payDate', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors"
+                  className="w-full bg-slate-50 border border-slate-200 text-navy-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500/40 transition-colors"
                 >
                   <option value="">Select pay date</option>
                   {['1st', '15th', '20th', '25th', '26th', '27th', '28th', '29th', '30th', 'Last day of month', 'Weekly', 'Bi-weekly'].map(d => (
@@ -631,13 +626,13 @@ export default function ApplicationForm({
 
           {step === 3 && (
             <div className="space-y-4">
-              <h3 className="text-gray-900 font-bold text-lg mb-5 flex items-center gap-2"><Building2 className="w-5 h-5 text-[#22c55e]" /> Banking Details</h3>
+              <h3 className="font-display text-navy-900 font-bold text-lg mb-5 flex items-center gap-2"><Building2 className="w-5 h-5 text-brand-500" /> Banking Details</h3>
               <div>
                 <label className="text-gray-600 text-sm font-medium mb-1.5 block">Bank Name</label>
                 <select
                   value={form.bankName}
                   onChange={e => update('bankName', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors"
+                  className="w-full bg-slate-50 border border-slate-200 text-navy-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500/40 transition-colors"
                 >
                   <option value="">Select your bank</option>
                   {SA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
@@ -652,7 +647,7 @@ export default function ApplicationForm({
                       key={type}
                       type="button"
                       onClick={() => update('accountType', type)}
-                      className={`py-3 rounded-xl border text-sm font-semibold capitalize transition-all duration-200 ${form.accountType === type ? 'bg-[#22c55e] border-[#22c55e] text-white' : 'border-gray-200 text-gray-600 hover:border-[#22c55e]/40'}`}
+                      className={`py-3 rounded-xl border text-sm font-semibold capitalize transition-all duration-200 ${form.accountType === type ? 'bg-brand-500 border-brand-500 text-white' : 'border-slate-200 text-navy-600 hover:border-brand-500/40'}`}
                     >
                       {type}
                     </button>
@@ -664,7 +659,7 @@ export default function ApplicationForm({
 
           {step === 4 && (
             <div className="space-y-6">
-              <h3 className="text-gray-900 font-bold text-lg mb-5 flex items-center gap-2"><FileText className="w-5 h-5 text-[#22c55e]" /> Document Upload</h3>
+              <h3 className="font-display text-navy-900 font-bold text-lg mb-5 flex items-center gap-2"><FileText className="w-5 h-5 text-brand-500" /> Document Upload</h3>
 
               {/* ── Bank Statements: Hybrid Ozow + Manual ────────────── */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-50/30 rounded-xl border border-blue-200 p-5">
@@ -861,7 +856,7 @@ export default function ApplicationForm({
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -878,10 +873,10 @@ interface FieldProps {
 function Field({ label, value, onChange, placeholder, type = 'text', inputMode, prefix }: FieldProps) {
   return (
     <div>
-      <label className="text-gray-600 text-sm font-medium mb-1.5 block">{label}</label>
+      <label className="text-navy-600 text-sm font-medium mb-1.5 block">{label}</label>
       <div className="relative">
         {prefix && (
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-sm">{prefix}</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-navy-400 font-medium text-sm">{prefix}</span>
         )}
         <input
           type={type}
@@ -889,7 +884,7 @@ function Field({ label, value, onChange, placeholder, type = 'text', inputMode, 
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-3 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors placeholder:text-gray-400 ${prefix ? 'pl-8 pr-4' : 'px-4'}`}
+          className={`w-full bg-slate-50 border border-slate-200 text-navy-900 rounded-xl py-3 text-sm focus:outline-none focus:border-brand-500/40 transition-colors placeholder:text-navy-300 ${prefix ? 'pl-8 pr-4' : 'px-4'}`}
         />
       </div>
     </div>

@@ -44,12 +44,12 @@ function AccordionItem({ item, isOpen, onToggle }: { item: typeof faqs[number]; 
   }, [isOpen]);
 
   return (
-    <div className={`rounded-2xl border transition-all duration-300 ${isOpen ? 'border-brand-200 bg-white shadow-md shadow-brand-500/[0.06]' : 'border-gray-100 bg-white hover:border-gray-200 shadow-sm'}`}>
+    <div className={`rounded-2xl border transition-all duration-300 ${isOpen ? 'border-brand-200/60 bg-white shadow-lg shadow-brand-500/[0.05]' : 'border-slate-100 bg-white hover:border-slate-200 shadow-sm'}`}>
       <button
         className="w-full flex items-center justify-between px-6 py-5 text-left gap-4"
         onClick={onToggle}
       >
-        <span className={`font-display font-semibold text-sm leading-snug transition-colors duration-200 ${isOpen ? 'text-brand-700' : 'text-navy-800'}`}>
+        <span className={`font-display font-semibold text-sm leading-snug transition-colors duration-200 ${isOpen ? 'text-brand-600' : 'text-navy-900'}`}>
           {item.q}
         </span>
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isOpen ? 'bg-brand-500 rotate-180' : 'bg-navy-50'}`}>
@@ -62,6 +62,7 @@ function AccordionItem({ item, isOpen, onToggle }: { item: typeof faqs[number]; 
       >
         <div ref={contentRef} className="px-6 pb-5">
           <p className="text-navy-500 text-sm leading-relaxed">{item.a}</p>
+
         </div>
       </div>
     </div>
@@ -73,7 +74,7 @@ export default function FAQ() {
   const sectionRef = useReveal();
 
   return (
-    <section id="faq" className="bg-gradient-to-b from-white to-slate-50 py-24">
+    <section id="faq" className="bg-white py-24">
       <div ref={sectionRef} className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-14 reveal">
           <span className="inline-block text-brand-600 text-xs font-bold uppercase tracking-[0.2em] mb-3">Got Questions?</span>

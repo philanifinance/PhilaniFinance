@@ -203,56 +203,56 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
   ];
 
   return (
-    <div className="bg-[#f8fafc] pb-12">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-        {/* Welcome banner */}
-        {showWelcome && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-bold text-green-800">Application Submitted Successfully!</h3>
-                <p className="text-green-700 text-sm mt-1">
-                  Your loan application has been received and is being processed. You can track its status below.
-                </p>
+    <div className="bg-slate-50 pb-16">
+      {/* Dark navy page header */}
+      <div className="bg-navy-950 pt-20 pb-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          {showWelcome && (
+            <div className="bg-brand-500/10 border border-brand-500/20 rounded-2xl px-5 py-4 mb-6 flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-bold text-white text-sm">Application Submitted Successfully!</h3>
+                  <p className="text-white/60 text-xs mt-1">Your application has been received and is being processed.</p>
+                </div>
               </div>
+              <button onClick={onWelcomeDismiss} className="text-white/40 hover:text-white text-xs font-medium flex-shrink-0 transition-colors">Dismiss</button>
             </div>
-            <button onClick={onWelcomeDismiss} className="text-green-600 hover:text-green-800 text-sm font-medium flex-shrink-0">
-              Dismiss
-            </button>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">
-              Welcome back, {profile.firstName || user.email?.split('@')[0]}
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">Manage your loan applications and personal information.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={fetchApplications}
-              className="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-            </button>
-            <button
-              onClick={hasActiveLoan ? undefined : onApply}
-              disabled={hasActiveLoan}
-              title={hasActiveLoan ? 'You have an active disbursed loan. New applications are disabled until repayment is confirmed.' : undefined}
-              className="inline-flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md hover:shadow-green-500/20">
-              New Application <ArrowRight className="w-4 h-4" />
-            </button>
+          )}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+            <div>
+              <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">Dashboard</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white">
+                Welcome back, {profile.firstName || user.email?.split('@')[0]}
+              </h1>
+              <p className="text-white/50 text-sm mt-1.5">Manage your loan applications and personal information.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={fetchApplications}
+                className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.1] text-white/70 hover:text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-white/[0.1] transition-all">
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              </button>
+              <button
+                onClick={hasActiveLoan ? undefined : onApply}
+                disabled={hasActiveLoan}
+                title={hasActiveLoan ? 'You have an active disbursed loan. Disabled until repayment is confirmed.' : undefined}
+                className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 disabled:bg-navy-800 disabled:text-navy-500 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-500/25">
+                New Application <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-1 pt-6">
 
         {/* Tab navigation */}
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6">
+        <div className="flex gap-1 bg-slate-200/60 rounded-2xl p-1 mb-6">
           {tabs.map(t => {
             const Icon = t.icon;
             return (
               <button key={t.key} onClick={() => { setTab(t.key); setSelectedApp(null); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === t.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === t.key ? 'bg-white text-navy-900 shadow-sm' : 'text-navy-500 hover:text-navy-700'}`}>
                 <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{t.label}</span>
               </button>
@@ -264,25 +264,25 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
         {tab === 'tracker' && (
           <div className="space-y-6">
             {loading ? (
-              <div className="flex items-center justify-center py-20 text-gray-500 gap-2">
+              <div className="flex items-center justify-center py-20 text-navy-500 gap-2">
                 <Loader2 className="w-5 h-5 animate-spin" /> Loading...
               </div>
             ) : !activeApp ? (
-              <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
-                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="font-bold text-gray-900 text-lg mb-2">No Active Applications</h3>
-                <p className="text-gray-500 text-sm mb-6">You don't have any active loan applications right now.</p>
+              <div className="bg-white border border-slate-100 rounded-2xl p-12 text-center shadow-sm">
+                <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="font-display font-bold text-navy-900 text-lg mb-2">No Active Applications</h3>
+                <p className="text-navy-500 text-sm mb-6">You don't have any active loan applications right now.</p>
                 <button onClick={onApply}
-                  className="inline-flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-semibold px-6 py-3 rounded-xl transition-all">
+                  className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold px-6 py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-500/25">
                   Start New Application <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <>
                 {/* Progress bar */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-bold text-gray-900">Application Progress</h2>
+                    <h2 className="font-display font-bold text-navy-900">Application Progress</h2>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[activeApp.status].bg} ${statusConfig[activeApp.status].color}`}>
                       {statusConfig[activeApp.status].label}
                     </span>
@@ -304,9 +304,9 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
 
                       let bgClass = 'bg-gray-100';
                       if (isRejected)   bgClass = 'bg-red-500';
-                      else if (isApproved && isActive) bgClass = 'bg-[#22c55e]';
-                      else if (isCurrent) bgClass = 'bg-[#22c55e] shadow-lg shadow-green-500/30';
-                      else if (isActive)  bgClass = 'bg-[#22c55e]';
+                      else if (isApproved && isActive) bgClass = 'bg-brand-500';
+                      else if (isCurrent) bgClass = 'bg-brand-500 shadow-lg shadow-brand-500/30';
+                      else if (isActive)  bgClass = 'bg-brand-500';
 
                       let StepIcon = s.icon;
                       let iconEl: React.ReactNode;
@@ -340,14 +340,14 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                             )}
                           </div>
                           {idx < statusSteps.length - 1 && (
-                            <div className={`h-0.5 flex-1 mx-1 -mt-5 rounded-full ${idx + 1 < current ? 'bg-[#22c55e]' : 'bg-gray-200'}`} />
+                            <div className={`h-0.5 flex-1 mx-1 -mt-5 rounded-full ${idx + 1 < current ? 'bg-brand-500' : 'bg-slate-200'}`} />
                           )}
                         </div>
                       );
                     })}
                   </div>
 
-                  <p className="text-gray-500 text-xs mt-2">
+                  <p className="text-navy-400 text-xs mt-2">
                     Submitted on {fmtDateTime(activeApp.created_at)}
                     {activeApp.reviewed_at && ` · Reviewed on ${fmtDateTime(activeApp.reviewed_at)}`}
                   </p>
@@ -473,10 +473,10 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                 )}
 
                 {/* Active application summary */}
-                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-                    <h2 className="font-bold text-gray-900">Loan Details</h2>
-                    <span className="text-2xl font-black text-[#22c55e]">{fmtZar(activeApp.loan_amount)}</span>
+                <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                    <h2 className="font-display font-bold text-navy-900">Loan Details</h2>
+                    <span className="text-2xl font-black text-brand-600">{fmtZar(activeApp.loan_amount)}</span>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-6 p-6">
                     <div className="space-y-2">
@@ -486,7 +486,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                         <div className="flex justify-between"><span className="text-gray-500">Interest</span><span className="font-medium text-gray-900">{fmtZar(activeApp.interest_amount)}</span></div>
                         <div className="flex justify-between"><span className="text-gray-500">Service Fee</span><span className="font-medium text-gray-900">{fmtZar(activeApp.service_fee)}</span></div>
                         <div className="flex justify-between"><span className="text-gray-500">VAT</span><span className="font-medium text-gray-900">{fmtZar(activeApp.vat_amount)}</span></div>
-                        <div className="flex justify-between border-t border-gray-100 pt-2"><span className="text-gray-700 font-medium">Total Repayable</span><span className="font-bold text-[#22c55e]">{fmtZar(activeApp.total_repayable)}</span></div>
+                        <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-navy-700 font-medium">Total Repayable</span><span className="font-bold text-brand-600">{fmtZar(activeApp.total_repayable)}</span></div>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -521,10 +521,10 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                 <Loader2 className="w-5 h-5 animate-spin" /> Loading...
               </div>
             ) : applications.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
-                <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="font-bold text-gray-900 text-lg mb-2">No Loan History</h3>
-                <p className="text-gray-500 text-sm">You haven't submitted any applications yet.</p>
+              <div className="bg-white border border-slate-100 rounded-2xl p-12 text-center shadow-sm">
+                <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="font-display font-bold text-navy-900 text-lg mb-2">No Loan History</h3>
+                <p className="text-navy-500 text-sm">You haven't submitted any applications yet.</p>
               </div>
             ) : selectedApp ? (
               /* Detail view for a past application */
@@ -540,7 +540,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                       <p className="text-xs text-gray-500 mt-1">Submitted {fmtDateTime(selectedApp.created_at)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-black text-[#22c55e]">{fmtZar(selectedApp.loan_amount)}</p>
+                      <p className="text-2xl font-black text-brand-600">{fmtZar(selectedApp.loan_amount)}</p>
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusConfig[selectedApp.status].bg} ${statusConfig[selectedApp.status].color}`}>
                         {statusConfig[selectedApp.status].label}
                       </span>
@@ -551,7 +551,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Loan</p>
                       <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-medium">{fmtZar(selectedApp.loan_amount)}</span></div>
                       <div className="flex justify-between"><span className="text-gray-500">Term</span><span className="font-medium">{selectedApp.loan_term_days} days</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold text-[#22c55e]">{fmtZar(selectedApp.total_repayable)}</span></div>
+                      <div className="flex justify-between"><span className="text-navy-500">Total</span><span className="font-bold text-brand-600">{fmtZar(selectedApp.total_repayable)}</span></div>
                     </div>
                     <div className="space-y-1.5 text-sm">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Fees</p>
@@ -623,10 +623,10 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                 <p className="text-gray-500 text-sm">Documents you upload with your applications will appear here.</p>
               </div>
             ) : (
-              <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-                  <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                    <FolderOpen className="w-4 h-4 text-[#22c55e]" /> Document Vault
+              <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+                <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                  <h2 className="font-display font-bold text-navy-900 flex items-center gap-2">
+                    <FolderOpen className="w-4 h-4 text-brand-500" /> Document Vault
                   </h2>
                   <span className="text-xs text-gray-400">{userDocs.length} document{userDocs.length !== 1 ? 's' : ''}</span>
                 </div>
@@ -668,7 +668,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                                     const { data } = await supabase.storage.from('loan_documents').createSignedUrl(doc.storage_path, 120);
                                     if (data?.signedUrl) window.open(data.signedUrl, '_blank');
                                   }}
-                                  className="inline-flex items-center gap-1.5 text-xs text-[#22c55e] hover:text-[#16a34a] font-semibold bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0">
+                                  className="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-semibold bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0">
                                   <Download className="w-3.5 h-3.5" /> View
                                 </button>
                               )}
