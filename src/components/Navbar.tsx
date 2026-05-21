@@ -3,20 +3,7 @@ import { useState, useEffect } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 function PFLogo() {
-  return (
-    <svg width="152" height="36" viewBox="0 0 152 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Philani Finance">
-      {/* Shield icon */}
-      <path d="M10 3L19 6.5V14C19 18.97 15.1 23.64 10 25C4.9 23.64 1 18.97 1 14V6.5L10 3Z" fill="#22c55e"/>
-      <path d="M7 13L9.5 15.5L14 10" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      {/* Wordmark */}
-      <text x="25" y="25" fontFamily="Poppins, system-ui, sans-serif" fontWeight="800" fontSize="18" fill="#102a43" letterSpacing="-0.5">
-        Philani
-      </text>
-      <text x="90" y="25" fontFamily="Poppins, system-ui, sans-serif" fontWeight="800" fontSize="18" fill="#22c55e" letterSpacing="-0.5">
-        Finance
-      </text>
-    </svg>
-  );
+  return <img src="/pfsl-f.png" alt="Philani Finance" className="h-20 w-auto" />;
 }
 
 interface NavbarProps {
