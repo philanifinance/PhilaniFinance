@@ -354,6 +354,27 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
     setDetailLoading(false);
   }, []);
 
+  // ── Realtime: keep loanContract in sync when client signs ──────────
+  useEffect(() => {
+    if (!selectedApp) return;
+    const channel = supabase
+      .channel(`loan_contracts:${selectedApp.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'loan_contracts',
+          filter: `application_id=eq.${selectedApp.id}`,
+        },
+        (payload) => {
+          setLoanContract(payload.new as LoanContractRecord);
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedApp]);
+
   const backToQueue = useCallback(() => {
     setView('queue');
     setSelectedApp(null);

@@ -158,7 +158,7 @@ function SignaturePad({ onSave, onClear }: { onSave: (dataUrl: string) => void; 
   const save = () => {
     const canvas = canvasRef.current;
     if (!canvas || !hasStrokes) return;
-    onSave(canvas.toDataURL('image/png'));
+    onSave(canvas.toDataURL('image/jpeg', 0.6));
   };
 
   return (
@@ -471,6 +471,7 @@ export default function LoanContractModal({
         .single();
 
       if (updateErr) throw new Error(updateErr.message);
+      if (!updated) throw new Error('Update returned no data. Check RLS policies or contact support.');
 
       const updatedContract = updated as LoanContractRecord;
       setContract(updatedContract);
