@@ -82,7 +82,7 @@ interface CreditCheckSummary {
 }
 
 type ViewMode = 'queue' | 'detail';
-type StatusFilter = 'all' | LoanApplication['status'];
+type StatusFilter = 'all' | LoanApplication['status'] | 'open' | 'closed';
 
 // ── Config ───────────────────────────────────────────────────────────
 const statusConfig: Record<LoanApplication['status'], { label: string; color: string; bg: string; icon: React.ElementType }> = {
@@ -220,7 +220,9 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
   // ── Filtered list ──────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = applications;
-    if (statusFilter !== 'all') list = list.filter(a => a.status === statusFilter);
+    if (statusFilter === 'open')   list = list.filter(a => a.loan_lifecycle === 'disbursed');
+    else if (statusFilter === 'closed') list = list.filter(a => a.loan_lifecycle === 'repaid');
+    else if (statusFilter !== 'all') list = list.filter(a => a.status === statusFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(a =>
@@ -1352,12 +1354,14 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
         </div>
 
         {/* Status Summary Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
           <StatCard label="Total" value={stats.total} color="text-navy-900" bg="bg-white" />
           <StatCard label="Pending" value={stats.pending} color="text-amber-700" bg="bg-amber-50" />
           <StatCard label="Reviewing" value={stats.reviewing} color="text-blue-700" bg="bg-blue-50" />
           <StatCard label="Approved" value={stats.approved} color="text-green-700" bg="bg-green-50" />
           <StatCard label="Rejected" value={stats.rejected} color="text-red-700" bg="bg-red-50" />
+          <StatCard label="Open Loans" value={stats.disbursed} color="text-emerald-700" bg="bg-emerald-50" onClick={() => setStatusFilter('open')} active={statusFilter === 'open'} />
+          <StatCard label="Closed Loans" value={stats.repaid} color="text-navy-700" bg="bg-navy-50" onClick={() => setStatusFilter('closed')} active={statusFilter === 'closed'} />
           <StatCard label="Avg Loan" value={fmtZar(stats.avgLoan)} color="text-brand-600" bg="bg-brand-50" isText />
         </div>
 
@@ -1379,6 +1383,8 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                 <option value="under_review">Under Review</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
+                <option value="open">Open Loans (Disbursed)</option>
+                <option value="closed">Closed Loans (Repaid)</option>
               </select>
               <button onClick={() => setSortDesc(s => !s)}
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-navy-600 hover:bg-slate-100 transition-colors" title="Toggle sort order">
@@ -1432,9 +1438,26 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                         <td className="px-5 py-3.5 text-navy-500 font-mono text-xs hidden lg:table-cell">{app.id_number}</td>
                         <td className="px-5 py-3.5 font-bold text-navy-900">{fmtZar(app.loan_amount)}</td>
                         <td className="px-5 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
-                            <StatusIcon className="w-3 h-3" /> {cfg.label}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
+                              <StatusIcon className="w-3 h-3" /> {cfg.label}
+                            </span>
+                            {app.loan_lifecycle === 'disbursed' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                                <Banknote className="w-2.5 h-2.5" /> Open Loan
+                              </span>
+                            )}
+                            {app.loan_lifecycle === 'repaid' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-navy-100 text-navy-700">
+                                <CheckCircle className="w-2.5 h-2.5" /> Closed
+                              </span>
+                            )}
+                            {app.loan_lifecycle === 'defaulted' && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">
+                                <AlertCircle className="w-2.5 h-2.5" /> Defaulted
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-5 py-3.5 text-navy-400 text-xs hidden md:table-cell">{fmtDateShort(app.created_at)}</td>
                         <td className="px-5 py-3.5 text-right">
@@ -1474,11 +1497,17 @@ function DarkStatCard({ label, value, sub, accent = 'text-white' }: {
   );
 }
 
-function StatCard({ label, value, color, bg, isText }: {
+function StatCard({ label, value, color, bg, isText, onClick, active }: {
   label: string; value: number | string; color: string; bg: string; isText?: boolean;
+  onClick?: () => void; active?: boolean;
 }) {
   return (
-    <div className={`${bg} border border-slate-200 rounded-xl px-4 py-3 shadow-sm`}>
+    <div
+      onClick={onClick}
+      className={`${bg} border rounded-xl px-4 py-3 shadow-sm transition-all ${
+        onClick ? 'cursor-pointer hover:shadow-md' : ''
+      } ${active ? 'ring-2 ring-offset-1 ring-current border-transparent' : 'border-slate-200'}`}
+    >
       <p className="text-xs font-medium text-navy-400 uppercase tracking-wide">{label}</p>
       <p className={`font-extrabold mt-1 ${color} ${isText ? 'text-sm' : 'text-xl'}`}>{value}</p>
     </div>
