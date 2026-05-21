@@ -13,6 +13,7 @@ import AdminDashboard from './components/AdminDashboard';
 import ClientDashboard from './components/ClientDashboard';
 import ForbiddenPage from './components/ForbiddenPage';
 import ToastContainer, { type ToastMessage } from './components/Toast';
+import Loader from './components/Loader';
 import { useAdminAuth } from './lib/useAdminAuth';
 import { ProfileProvider } from './lib/ProfileContext';
 
@@ -23,6 +24,9 @@ function AppInner() {
     user, loading, signIn, signUp, signOut,
     isAuthenticated, isAdmin, isOwner, role,
   } = useAdminAuth();
+
+  const [minLoadDone, setMinLoadDone] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setMinLoadDone(true), 2500); return () => clearTimeout(t); }, []);
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authDefaultMode, setAuthDefaultMode] = useState<'login' | 'signup'>('login');
@@ -129,13 +133,7 @@ function AppInner() {
   }, [goToApply]);
 
   // ── Loading screen ─────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-        <div className="animate-spin w-10 h-10 border-2 border-[#22c55e]/30 border-t-[#22c55e] rounded-full" />
-      </div>
-    );
-  }
+  if (loading || !minLoadDone) return <Loader />;
 
   // ── 403 Forbidden ──────────────────────────────────────────────────
   if (currentPage === 'forbidden') {
