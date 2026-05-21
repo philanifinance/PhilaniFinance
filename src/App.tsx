@@ -30,7 +30,7 @@ function AppInner() {
 
   // Loan parameters selected from Hero calculator
   const [loanAmount, setLoanAmount] = useState(2000);
-  const [loanTermDays, setLoanTermDays] = useState(14);
+  const [loanTermDays, setLoanTermDays] = useState(1);
 
   // Toast notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);

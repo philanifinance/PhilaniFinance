@@ -16,8 +16,8 @@ const faqs = [
     a: 'We offer micro-loans from R500 up to R8,000. Your approved amount is based on a responsible affordability assessment.',
   },
   {
-    q: 'How is the interest rate calculated?',
-    a: 'We charge 0.15% per day on the outstanding principal. A once-off service fee of R60 plus 10% of the loan amount applies, with VAT at 15% on all fees.',
+    q: 'How is the cost of credit calculated?',
+    a: 'Your total repayable amount includes the principal loan plus applicable interest and service fees, calculated in line with NCA regulations. Use the calculator on our homepage to see your exact repayment amount before you apply — no hidden costs.',
   },
   {
     q: 'Is my personal information safe?',
@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: 'Can I repay early?',
-    a: 'Yes. Early settlement is always welcome. If you repay before your due date, only interest for the actual days used will apply — no penalty fees.',
+    a: 'Yes. Early settlement is always welcome and encouraged. No penalty fees apply for settling early.',
   },
   {
     q: 'What if I cannot repay on time?',

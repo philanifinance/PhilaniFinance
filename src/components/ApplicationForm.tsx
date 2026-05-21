@@ -434,7 +434,7 @@ export default function ApplicationForm({
     const { data: insertedApp, error: dbError } = await supabase.from('loan_applications').insert({
       user_id: user?.id,
       loan_amount: Math.round(loanAmount),
-      loan_term_days: loanTermDays,
+      loan_term_days: calc.termDays,
       interest_amount: Math.round(calc.interest),
       service_fee: Math.round(calc.serviceFee),
       vat_amount: Math.round(calc.vat),
@@ -553,7 +553,7 @@ export default function ApplicationForm({
           <span className="text-brand-400 text-xs font-bold uppercase tracking-[0.2em]">Ready to Apply?</span>
           <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white mt-2">Your Application</h2>
           <p className="text-white/50 mt-2 text-sm">
-            Applying for <strong className="text-brand-400">{formatCurrency(loanAmount)}</strong> over {loanTermDays} days
+            Applying for <strong className="text-brand-400">{formatCurrency(loanAmount)}</strong> · repayable over 35 days
             · Total repayable: <strong className="text-white/80">{formatCurrency(loanCalc.totalRepayable)}</strong>
           </p>
         </div>

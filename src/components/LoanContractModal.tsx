@@ -270,14 +270,10 @@ function ContractDocument({
                 <td className="px-4 py-2.5 font-semibold text-gray-900">{app.loan_term_days} days</td>
               </tr>
               <tr className="bg-gray-50">
-                <td className="px-4 py-2.5 text-gray-500 font-medium">Interest Amount</td>
-                <td className="px-4 py-2.5 font-semibold text-gray-900">{fmtZar(app.interest_amount)}</td>
+                <td className="px-4 py-2.5 text-gray-500 font-medium">Interest &amp; Service Fees</td>
+                <td className="px-4 py-2.5 font-semibold text-gray-900">{fmtZar(app.interest_amount + app.service_fee)}</td>
               </tr>
               <tr>
-                <td className="px-4 py-2.5 text-gray-500 font-medium">Initiation / Service Fee</td>
-                <td className="px-4 py-2.5 font-semibold text-gray-900">{fmtZar(app.service_fee)}</td>
-              </tr>
-              <tr className="bg-gray-50">
                 <td className="px-4 py-2.5 text-gray-500 font-medium">VAT (15%)</td>
                 <td className="px-4 py-2.5 font-semibold text-gray-900">{fmtZar(app.vat_amount)}</td>
               </tr>
@@ -323,7 +319,7 @@ function ContractDocument({
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3 text-xs text-gray-600">
           <p><strong>1. National Credit Act (NCA).</strong> This agreement is governed by the National Credit Act 34 of 2005. {COMPANY.name} is a registered credit provider (NCR No: {COMPANY.ncr}).</p>
           <p><strong>2. Repayment.</strong> The consumer agrees to repay the Total Amount Repayable of {fmtZar(app.total_repayable)} on or before {repayDate} via DebiCheck debit order from the banking account specified above.</p>
-          <p><strong>3. Interest & Fees.</strong> All fees and interest are as per the NCA prescribed limits. A breakdown is provided in the Loan Details table above.</p>
+          <p><strong>3. Interest, Fees &amp; VAT.</strong> Interest and service fees of {fmtZar(app.interest_amount + app.service_fee)}, plus VAT of {fmtZar(app.vat_amount)} (15% levied on applicable fees), are as per NCA prescribed limits and are included in the Total Amount Repayable stated above.</p>
           <p><strong>4. Late Payments.</strong> A late payment penalty fee may be charged in accordance with NCA regulations. The credit provider reserves the right to report defaults to credit bureaus.</p>
           <p><strong>5. Cooling-Off Period.</strong> The consumer may cancel this agreement within 5 business days of signing, without penalty, by providing written notice to the credit provider.</p>
           <p><strong>6. Default.</strong> Failure to repay on the agreed date constitutes a default. The credit provider may institute legal proceedings and report the consumer to credit bureaus after sending a Section 129 notice as required by the NCA.</p>

@@ -34,75 +34,84 @@ const QUOTE = {
   validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" }),
 };
 
-// Line items — digital lending platform development
+// Line items — digital lending platform development (total: R6,500)
 const ITEMS = [
   {
-    title: "UX Design & Brand System",
+    title: "UX Design &amp; Brand System",
     detail: "Design system (colour, typography, components), mobile-first wireframes, hi-fi mock-ups, and design deck.",
     qty: 1,
-    rate: 2500,
+    rate: 700,
   },
   {
     title: "Public Landing Page",
-    detail: "Hero with loan calculator, TrustBar, HowItWorks, FAQ, CtaBanner, Footer — fully responsive.",
+    detail: "Hero with live loan calculator, TrustBar, HowItWorks, FAQ, CtaBanner, Footer — fully responsive.",
     qty: 1,
-    rate: 3000,
+    rate: 900,
   },
   {
     title: "Multi-Step Loan Application Portal",
-    detail: "Personal, employment, banking &amp; document upload steps. SA ID validation, income parsing, real-time fee calc.",
+    detail: "Personal, employment, banking &amp; document upload steps. SA ID validation, income parsing, real-time NCR fee calc.",
     qty: 1,
-    rate: 5500,
+    rate: 1400,
   },
   {
     title: "Client Self-Service Dashboard",
     detail: "Application status tracking, document access, signed loan contracts, notification history.",
     qty: 1,
-    rate: 4000,
+    rate: 800,
   },
   {
     title: "Admin Analytics Dashboard",
     detail: "Pipeline overview, approval rate, active portfolio value, monthly trend charts, full audit trail.",
     qty: 1,
-    rate: 5000,
+    rate: 1000,
   },
   {
     title: "Loan Contract System",
-    detail: "NCA-compliant PDF contract generation, in-browser e-signature, Supabase Storage archival.",
+    detail: "NCA-compliant PDF contract generation, in-browser e-signature, secure document archival.",
     qty: 1,
-    rate: 3500,
+    rate: 700,
   },
   {
     title: "Email &amp; SMS Notification Engine",
     detail: "Transactional emails via Resend + SMS via BulkSMS at every application lifecycle stage.",
     qty: 1,
-    rate: 2500,
+    rate: 600,
   },
   {
     title: "DebiCheck Mandate Integration",
     detail: "Admin-initiated DebiCheck flow with bank-specific approval instructions and reminder notifications.",
     qty: 1,
-    rate: 2500,
+    rate: 400,
   },
   {
-    title: "Supabase Backend, Auth &amp; Storage",
-    detail: "PostgreSQL schema, Row Level Security, migrations, Edge Functions, Storage buckets with POPIA-compliant access.",
-    qty: 1,
-    rate: 3000,
-  },
-  {
-    title: "Deployment, DNS &amp; 30-day support",
+    title: "Deployment, DNS &amp; 30-day Support",
     detail: "Production deploy, domain DNS configuration, HTTPS, staff onboarding &amp; 30 days post-launch support.",
     qty: 1,
-    rate: 2000,
+    rate: 500,
     free: true,
     freeLabel: "Included — no extra charge",
   },
 ];
 
+// Recurring third-party costs (billed directly to client)
+const RECURRING = [
+  {
+    title: "BulkSMS Credit Bundle",
+    detail: "2,950 SMS credits — covers transactional notifications (approvals, reminders, DebiCheck alerts).",
+    period: "Per bundle",
+    rate: 938.05,
+  },
+  {
+    title: "Domain Registration / Renewal",
+    detail: ".co.za domain registration or annual renewal (philanifinance.co.za).",
+    period: "Per year",
+    rate: 187.00,
+  },
+];
+
 const SUBTOTAL = ITEMS.reduce((s, i) => s + (i.free ? 0 : i.qty * i.rate), 0);
-// Total is R6,500. VAT not applicable (small-supplier exempt).
-const TOTAL = SUBTOTAL;
+const TOTAL = SUBTOTAL; // R6,500 — VAT not applicable (small-supplier exempt)
 
 const fmt = (n) => "R " + n.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -188,6 +197,9 @@ const html = `<!doctype html>
   .sign .label { letter-spacing: 0.2em; text-transform: uppercase; font-size: 6.5pt; color: rgba(15,23,42,0.5); margin-top: 1.5mm; }
 
   .foot { margin-top: 2mm; padding-top: 2mm; border-top: 1px solid rgba(15,23,42,0.12); font-size: 6.5pt; color: rgba(15,23,42,0.45); text-align: center; letter-spacing: 0.15em; text-transform: uppercase; }
+  .section-heading { font-size: 7pt; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(15,23,42,0.48); font-weight: 700; margin-bottom: 1mm; margin-top: 3mm; padding-bottom: 0.8mm; border-bottom: 1.5pt solid #0f172a; }
+  .recurring-note { font-size: 7pt; color: rgba(15,23,42,0.5); margin-top: 1mm; font-style: italic; }
+  .page-break { break-before: page; page-break-before: always; }
 </style></head>
 <body>
   <div class="page">
@@ -227,7 +239,8 @@ const html = `<!doctype html>
       </div>
     </div>
 
-    <!-- Items -->
+    <!-- Development Items -->
+    <div class="section-heading">Development &amp; Delivery</div>
     <table>
       <thead>
         <tr>
@@ -263,9 +276,34 @@ const html = `<!doctype html>
       </div>
     </div>
 
+    <!-- Recurring Costs — page 2 -->
+    <div class="section-heading page-break">Recurring Third-Party Costs <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:7pt">(billed directly to client — not invoiced through developer)</span></div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 62%">Service</th>
+          <th class="r" style="width: 19%">Billing period</th>
+          <th class="r" style="width: 19%">Cost (ZAR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${RECURRING.map(r => `
+          <tr>
+            <td>
+              <div class="item-title">${r.title}</div>
+              <div class="item-detail">${r.detail}</div>
+            </td>
+            <td class="r">${r.period}</td>
+            <td class="r">${fmt(r.rate)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+    <div class="recurring-note">These costs are payable directly to the respective service providers and are listed here for budgeting purposes only.</div>
+
     <!-- Terms -->
     <div class="terms">
-      <b>Payment:</b> 50% deposit (${fmt(TOTAL / 2)}) on acceptance, 50% balance on go-live sign-off. EFT &mdash; banking details on invoice. &nbsp;|&nbsp; <b>Infrastructure:</b> Supabase, Resend, and BulkSMS accounts registered in the client&apos;s name &mdash; no recurring third-party fees through provider. &nbsp;|&nbsp; <b>Out of scope:</b> Third-party credit bureau integration, FICA biometric verification, and payment gateway processing (available as separate engagements).
+      <b>Payment:</b> 50% deposit (${fmt(TOTAL / 2)}) on acceptance, 50% balance on go-live sign-off. EFT &mdash; banking details on invoice. &nbsp;|&nbsp; <b>Recurring costs:</b> BulkSMS and domain fees are the client&apos;s direct responsibility — see table above. &nbsp;|&nbsp; <b>Out of scope:</b> Third-party credit bureau integration, FICA biometric verification, and payment gateway processing (available as separate engagements).
     </div>
 
     <!-- Sign-off -->

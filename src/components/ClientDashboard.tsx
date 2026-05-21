@@ -483,8 +483,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5"><CreditCard className="w-3.5 h-3.5" /> Loan Breakdown</p>
                       <div className="space-y-1.5 text-sm">
                         <div className="flex justify-between"><span className="text-gray-500">Principal</span><span className="font-medium text-gray-900">{fmtZar(activeApp.loan_amount)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Interest</span><span className="font-medium text-gray-900">{fmtZar(activeApp.interest_amount)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Service Fee</span><span className="font-medium text-gray-900">{fmtZar(activeApp.service_fee)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Interest &amp; Service Fees</span><span className="font-medium text-gray-900">{fmtZar(activeApp.interest_amount + activeApp.service_fee)}</span></div>
                         <div className="flex justify-between"><span className="text-gray-500">VAT</span><span className="font-medium text-gray-900">{fmtZar(activeApp.vat_amount)}</span></div>
                         <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-navy-700 font-medium">Total Repayable</span><span className="font-bold text-brand-600">{fmtZar(activeApp.total_repayable)}</span></div>
                       </div>
@@ -555,8 +554,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                     </div>
                     <div className="space-y-1.5 text-sm">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Fees</p>
-                      <div className="flex justify-between"><span className="text-gray-500">Interest</span><span className="font-medium">{fmtZar(selectedApp.interest_amount)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Service Fee</span><span className="font-medium">{fmtZar(selectedApp.service_fee)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Interest &amp; Service Fees</span><span className="font-medium">{fmtZar(selectedApp.interest_amount + selectedApp.service_fee)}</span></div>
                       <div className="flex justify-between"><span className="text-gray-500">VAT</span><span className="font-medium">{fmtZar(selectedApp.vat_amount)}</span></div>
                     </div>
                     <div className="space-y-1.5 text-sm">

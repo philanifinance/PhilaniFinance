@@ -680,9 +680,8 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                   ]} />
                   <InfoBlock icon={CreditCard} title="Loan Breakdown" items={[
                     { label: 'Principal', value: fmtZar(selectedApp.loan_amount) },
-                    { label: 'Interest', value: fmtZar(selectedApp.interest_amount) },
-                    { label: 'Service Fee', value: fmtZar(selectedApp.service_fee) },
-                    { label: 'VAT', value: fmtZar(selectedApp.vat_amount) },
+                    { label: 'Interest & Service Fees', value: fmtZar(selectedApp.interest_amount + selectedApp.service_fee) },
+                    { label: 'VAT (15%)', value: fmtZar(selectedApp.vat_amount) },
                     { label: 'Total Repayable', value: fmtZar(selectedApp.total_repayable), highlight: true },
                   ]} />
                 </div>
@@ -1041,7 +1040,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                   </div>
                   <div className="flex justify-between">
                     <span className="text-navy-500">Total Fees</span>
-                    <span className="font-bold text-navy-900">{fmtZar(selectedApp.service_fee + selectedApp.vat_amount)}</span>
+                    <span className="font-bold text-navy-900">{fmtZar(selectedApp.total_repayable - selectedApp.loan_amount)}</span>
                   </div>
                   <div className="border-t border-slate-100 pt-3 flex justify-between">
                     <span className="text-navy-500 font-medium">Net Payout</span>

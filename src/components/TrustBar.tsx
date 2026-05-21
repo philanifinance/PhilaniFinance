@@ -6,7 +6,7 @@ const stats = [
   { value: 2400, suffix: '+', label: 'Clients Served' },
   { value: 98,   suffix: '%', label: 'Approval Rate' },
   { value: 4,    suffix: 'h', label: 'Avg. Payout Time' },
-  { value: 100,  suffix: '%', label: 'Paperwork-Free' },
+  { value: 100,  suffix: '%', label: 'NCR Registered' },
 ];
 
 const benefits = [

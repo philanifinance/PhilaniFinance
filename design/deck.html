@@ -64,146 +64,232 @@
     .system-page .brand-name { color: white; }
     .system-page .brand-sub { color: rgba(255,255,255,0.3); }
     .system-page .page-number { color: rgba(255,255,255,0.25); }
+    /* Auth single-page layout */
+    .auth-layout { display: grid; grid-template-columns: 1.9fr 1fr; gap: 9mm; align-items: flex-start; margin-top: 3mm; height: calc(100% - 48mm); }
+    .auth-wrap { display: flex; flex-direction: column; }
+    .auth-wrap .caption { font-size: 7pt; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(15,23,42,0.48); margin-bottom: 3mm; font-weight: 600; font-family: 'Inter', sans-serif; }
+    .auth-scroll { max-height: 202mm; overflow: hidden; }
+    .auth-img { width: 100%; display: block; }
+    .auth-panel { display: flex; flex-direction: column; gap: 3.5mm; padding-top: 10mm; }
+    .auth-note { padding: 5mm 6mm; background: white; border-radius: 4pt; border: 1px solid rgba(15,23,42,0.07); }
+    .auth-note .k { font-size: 7pt; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(15,23,42,0.4); margin-bottom: 1.5mm; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .auth-note .v { font-size: 9pt; color: #0f172a; font-weight: 600; font-family: 'Poppins', sans-serif; line-height: 1.45; }
+    .auth-blurb { font-size: 8.5pt; color: rgba(15,23,42,0.6); line-height: 1.6; margin-bottom: 4mm; border-left: 2pt solid #22c55e; padding-left: 4mm; }
   </style></head><body>
     <section class="page cover">
-      <div class="brand">
-        <div class="brand-name">Philani <span>Finance</span></div>
-      </div>
+      <div class="brand"><div class="brand-name">Philani <span>Finance</span></div></div>
       <p class="tag">Digital Lending Platform &middot; Design Deck</p>
       <h1>Fast, fair credit.<br/><span>Built for South Africa.</span></h1>
-      <p class="sub">A design presentation for Philani Financial Services &mdash; showcasing the client-facing landing page, multi-step loan application portal, and admin analytics dashboard across desktop and mobile. Built with React 18, TypeScript, Tailwind CSS and Supabase.</p>
+      <p class="sub">A complete design presentation for Philani Financial Services &mdash; showcasing the landing page, loan application portal, client dashboard, and admin back-office across desktop and mobile. Built with React 18, TypeScript, Tailwind CSS and Supabase.</p>
       <div class="pill">NCR Reg: NCRCP18260 &middot; NCA &amp; POPIA Compliant</div>
       <div class="meta">
         <span>3663 Mtshilibe Street, Ratanda, Heidelberg, 1441</span>
         <span>013 752 2478 &middot; info@philanifinance.co.za</span>
       </div>
     </section>
-  
     <section class="page system-page">
-      <div class="brand"><div class="brand-name">Philani <span>Finance</span></div><div class="brand-sub">Design System</div></div>
-      <div class="page-number">02 / 8</div>
-      <div class="section-header" style="margin-top: 20mm;">
+      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">Design System</div></div>
+      <div class="page-number">02 / 13</div>
+      <div class="section-header" style="margin-top:20mm;">
         <div class="kicker">01 &middot; Foundations</div>
         <h2>The visual language</h2>
-        <p class="desc">A premium, trust-first palette anchored in deep navy and brand green &mdash; projecting financial authority while remaining approachable. Poppins ExtraBold for headlines, Inter for crisp body copy and data. Subtle glass surfaces, animated counters, and generous whitespace convey confidence.</p>
+        <p class="desc">A premium, trust-first palette anchored in deep navy and brand green — projecting financial authority while remaining approachable. Poppins ExtraBold for display, Inter for crisp body copy and data. Subtle card surfaces, animated counters, and generous whitespace convey confidence.</p>
       </div>
       <div class="palette">
         <div class="swatch"><div class="chip" style="background:#0f172a;"></div><div class="lbl">Navy 950</div><div class="hex">#0f172a</div></div>
         <div class="swatch"><div class="chip" style="background:#1e3a5f;"></div><div class="lbl">Navy 700</div><div class="hex">#1e3a5f</div></div>
         <div class="swatch"><div class="chip" style="background:#22c55e;"></div><div class="lbl">Brand Green</div><div class="hex">#22c55e</div></div>
-        <div class="swatch"><div class="chip" style="background:#f8fafc; border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">Slate 50</div><div class="hex">#f8fafc</div></div>
-        <div class="swatch"><div class="chip" style="background:#ffffff; border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">White</div><div class="hex">#ffffff</div></div>
+        <div class="swatch"><div class="chip" style="background:#f8fafc;border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">Slate 50</div><div class="hex">#f8fafc</div></div>
+        <div class="swatch"><div class="chip" style="background:#fff;border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">White</div><div class="hex">#ffffff</div></div>
       </div>
-      <div class="specs" style="margin-top: 8mm;">
+      <div class="specs" style="margin-top:8mm;">
         <div class="spec"><div class="k">Display Font</div><div class="v" style="font-family:'Poppins',sans-serif;font-weight:800;">Poppins &middot; ExtraBold 800</div></div>
         <div class="spec"><div class="k">Body Font</div><div class="v">Inter &middot; 300 / 400 / 500 / 600</div></div>
         <div class="spec"><div class="k">Backend</div><div class="v">Supabase &middot; PostgreSQL &middot; Edge Functions</div></div>
         <div class="spec"><div class="k">Tech Stack</div><div class="v">React 18 &middot; TypeScript &middot; Tailwind &middot; Vite</div></div>
       </div>
     </section>
-  
     <section class="page">
       <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">Landing Page</div></div>
-      <div class="page-number">03 / 8</div>
-      <div class="section-header" style="margin-top: 20mm;">
+      <div class="page-number">03 / 13</div>
+      <div class="section-header" style="margin-top:20mm;">
         <div class="kicker">02 &middot; Landing Page</div>
         <h2>Landing Page — the trust moment</h2>
-        <p class="desc">Hero calculator · Trust bar · How It Works · FAQ · CTA Banner</p>
+        <p class="desc">Dark navy hero with live loan calculator, animated stat counters, trust badges and full-bleed CTA.</p>
       </div>
       <div class="layout">
         <div class="desktop-wrap">
           <div class="caption">Desktop &middot; 1440 &times; 900</div>
-          <div class="frame">
-            <div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za/</span></div>
-            <div class="frame-body desktop-scroll"><img class="desktop-img" src="shots/home_desktop.png" /></div>
+          <div class="frame"><div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za</span></div>
+            <div class="frame-body desktop-scroll"><img class="desktop-img" src="shots/hero_desktop.png"/></div>
           </div>
         </div>
         <div class="mobile-wrap">
-          <div class="caption">Mobile &middot; 393 &times; 852 (iPhone 15 Pro)</div>
-          <div class="mobile-frame">
-            <div class="mobile-inner"><img class="mobile-img" src="shots/home_mobile.png" /></div>
-          </div>
+          <div class="caption">Mobile &middot; 393 &times; 852</div>
+          <div class="mobile-frame"><div class="mobile-inner"><img class="mobile-img" src="shots/hero_mobile.png"/></div></div>
         </div>
       </div>
     </section>
     <section class="page">
       <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">Landing Page &middot; Notes</div></div>
-      <div class="page-number">04 / 8</div>
-      <div class="section-header" style="margin-top: 20mm;">
-        <div class="kicker">Design notes</div>
-        <h2>Landing Page — the trust moment</h2>
-      </div>
-      <div class="notes"><b>Dark navy hero</b> with an embedded loan calculator — amount slider, term selector, and live repayment preview — anchors the above-the-fold experience. Animated stat counters (total loans, avg approval time, client satisfaction) build credibility on scroll.<br/><br/><b>TrustBar</b> presents key platform metrics with brand-green glows. <b>HowItWorks</b> uses a numbered four-step timeline. The <b>CtaBanner</b> is a cinematic full-bleed photo section with an NCR compliance badge and a single strong CTA. Every element is scroll-triggered with reveal animations.</div>
+      <div class="page-number">04 / 13</div>
+      <div class="section-header" style="margin-top:20mm;"><div class="kicker">Design notes</div><h2>Landing Page — the trust moment</h2></div>
+      <div class="notes"><b>Dark navy hero</b> with an embedded loan calculator — amount slider, term selector, and live repayment preview — anchors the above-the-fold experience. Animated stat counters (total disbursed, approval rate, client satisfaction) build instant credibility.<br/><br/><b>TrustBar</b> presents key platform metrics with brand-green icon glows. The <b>CtaBanner</b> is a cinematic full-bleed section with NCR compliance badge. Every element is scroll-triggered with reveal animations.</div>
       <div class="specs"><div class="spec"><div class="k">Hero</div><div class="v">Loan calculator · Apply Now / Check Eligibility</div></div><div class="spec"><div class="k">Trust signals</div><div class="v">NCR NCRCP18260 · NCA & POPIA compliant</div></div><div class="spec"><div class="k">Header</div><div class="v">Transparent → solid navy on scroll</div></div><div class="spec"><div class="k">Animations</div><div class="v">Scroll reveal · animated stat counters</div></div></div>
     </section>
-  
     <section class="page">
       <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">How It Works</div></div>
-      <div class="page-number">05 / 8</div>
-      <div class="section-header" style="margin-top: 20mm;">
+      <div class="page-number">05 / 13</div>
+      <div class="section-header" style="margin-top:20mm;">
         <div class="kicker">03 &middot; How It Works</div>
         <h2>How It Works — four steps to funds</h2>
-        <p class="desc">Four-step application process with timeline and trust badges</p>
+        <p class="desc">Numbered timeline walks applicants through Apply → Verify → Approve → Payout with time estimates.</p>
       </div>
       <div class="layout">
         <div class="desktop-wrap">
           <div class="caption">Desktop &middot; 1440 &times; 900</div>
-          <div class="frame">
-            <div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za/#how-it-works</span></div>
-            <div class="frame-body desktop-scroll"><img class="desktop-img" src="shots/how-it-works_desktop.png" /></div>
+          <div class="frame"><div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za</span></div>
+            <div class="frame-body desktop-scroll"><img class="desktop-img" src="shots/hiw_desktop.png"/></div>
           </div>
         </div>
         <div class="mobile-wrap">
-          <div class="caption">Mobile &middot; 393 &times; 852 (iPhone 15 Pro)</div>
-          <div class="mobile-frame">
-            <div class="mobile-inner"><img class="mobile-img" src="shots/how-it-works_mobile.png" /></div>
-          </div>
+          <div class="caption">Mobile &middot; 393 &times; 852</div>
+          <div class="mobile-frame"><div class="mobile-inner"><img class="mobile-img" src="shots/hiw_mobile.png"/></div></div>
         </div>
       </div>
     </section>
     <section class="page">
       <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">How It Works &middot; Notes</div></div>
-      <div class="page-number">06 / 8</div>
-      <div class="section-header" style="margin-top: 20mm;">
-        <div class="kicker">Design notes</div>
-        <h2>How It Works — four steps to funds</h2>
-      </div>
-      <div class="notes"><b>Numbered step timeline</b> with icons, time estimates and color-coded cards walks applicants through the journey: Apply (2 min) → Verify → Approve → Payout (same day). A feature image with floating trust badges adds credibility without clutter.<br/><br/>The layout adapts cleanly to mobile — steps stack vertically and the image collapses gracefully below the timeline.</div>
+      <div class="page-number">06 / 13</div>
+      <div class="section-header" style="margin-top:20mm;"><div class="kicker">Design notes</div><h2>How It Works — four steps to funds</h2></div>
+      <div class="notes"><b>Numbered step timeline</b> with icons, estimated durations and color-coded cards walks applicants through the full journey: Apply (2 min) → Verify documents → Approve → Payout (same day). A feature image with floating trust badges adds credibility without clutter.<br/><br/>The layout adapts cleanly to mobile — steps stack vertically and the image collapses gracefully.</div>
       <div class="specs"><div class="spec"><div class="k">Steps</div><div class="v">Apply → Verify documents → Approve → Payout</div></div><div class="spec"><div class="k">Time estimates</div><div class="v">Avg 2 min application · Same-day payout</div></div><div class="spec"><div class="k">Mobile layout</div><div class="v">Vertical stack · full-width feature image</div></div><div class="spec"><div class="k">Animation</div><div class="v">Step-by-step scroll reveal</div></div></div>
     </section>
-  
     <section class="page">
       <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">FAQ & CTA</div></div>
-      <div class="page-number">07 / 8</div>
-      <div class="section-header" style="margin-top: 20mm;">
+      <div class="page-number">07 / 13</div>
+      <div class="section-header" style="margin-top:20mm;">
         <div class="kicker">04 &middot; FAQ & CTA</div>
         <h2>FAQ & CTA — compliance and conversion</h2>
-        <p class="desc">Accordion FAQ · NCR compliance copy · conversion banner</p>
+        <p class="desc">Smooth accordion FAQ covering eligibility, repayment and NCR compliance, followed by conversion CTA.</p>
       </div>
       <div class="layout">
         <div class="desktop-wrap">
           <div class="caption">Desktop &middot; 1440 &times; 900</div>
-          <div class="frame">
-            <div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za/#faq</span></div>
-            <div class="frame-body desktop-scroll"><img class="desktop-img" src="shots/faq_desktop.png" /></div>
+          <div class="frame"><div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za</span></div>
+            <div class="frame-body desktop-scroll"><img class="desktop-img" src="shots/faq_desktop.png"/></div>
           </div>
         </div>
         <div class="mobile-wrap">
-          <div class="caption">Mobile &middot; 393 &times; 852 (iPhone 15 Pro)</div>
-          <div class="mobile-frame">
-            <div class="mobile-inner"><img class="mobile-img" src="shots/faq_mobile.png" /></div>
-          </div>
+          <div class="caption">Mobile &middot; 393 &times; 852</div>
+          <div class="mobile-frame"><div class="mobile-inner"><img class="mobile-img" src="shots/faq_mobile.png"/></div></div>
         </div>
       </div>
     </section>
     <section class="page">
       <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">FAQ & CTA &middot; Notes</div></div>
-      <div class="page-number">08 / 8</div>
-      <div class="section-header" style="margin-top: 20mm;">
-        <div class="kicker">Design notes</div>
-        <h2>FAQ & CTA — compliance and conversion</h2>
-      </div>
-      <div class="notes"><b>Accordion FAQ</b> with smooth expand/collapse answers common borrower questions around eligibility, repayment, and NCR compliance. Open state highlights in brand-green with chevron rotation provide clear visual feedback.<br/><br/>Below the FAQ sits the <b>CtaBanner</b> — a cinematic full-bleed conversion section with NCR compliance badge. The navy footer lists address, NCR registration, and all legal links.</div>
-      <div class="specs"><div class="spec"><div class="k">FAQ</div><div class="v">Accordion · smooth height animation</div></div><div class="spec"><div class="k">Open state</div><div class="v">Brand-green border-left · box-shadow glow</div></div><div class="spec"><div class="k">Compliance</div><div class="v">NCR Reg NCRCP18260 · NCA reference</div></div><div class="spec"><div class="k">Footer</div><div class="v">Address · phone · legal links · NCA warning</div></div></div>
+      <div class="page-number">08 / 13</div>
+      <div class="section-header" style="margin-top:20mm;"><div class="kicker">Design notes</div><h2>FAQ & CTA — compliance and conversion</h2></div>
+      <div class="notes"><b>Accordion FAQ</b> with smooth expand/collapse answers common borrower questions around eligibility, repayment, and NCR compliance. Open state highlights in brand-green with chevron rotation provide clear visual feedback.<br/><br/>Below the FAQ the <b>CtaBanner</b> is a full-bleed conversion section with NCR compliance badge. The navy footer lists address, NCR registration, and all legal links.</div>
+      <div class="specs"><div class="spec"><div class="k">FAQ</div><div class="v">Accordion · smooth height animation</div></div><div class="spec"><div class="k">Open state</div><div class="v">Brand-green border-left · glow shadow</div></div><div class="spec"><div class="k">Compliance</div><div class="v">NCR Reg NCRCP18260 · NCA reference</div></div><div class="spec"><div class="k">Footer</div><div class="v">Address · phone · legal links · NCA warning</div></div></div>
     </section>
-  </body></html>
+    <section class="page">
+      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">Admin Dashboard</div></div>
+      <div class="page-number">09 / 13</div>
+      <div class="section-header" style="margin-top:18mm;">
+        <div class="kicker">04 · Admin</div>
+        <h2>Analytics & Portfolio Overview</h2>
+      </div>
+      <div class="auth-layout">
+        <div class="auth-wrap">
+          <div class="caption">Desktop &middot; 1440 &times; 900 &middot; Authenticated</div>
+          <div class="frame"><div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za &mdash; Admin Dashboard</span></div>
+            <div class="frame-body auth-scroll"><img class="auth-img" src="shots/admin_analytics.png"/></div>
+          </div>
+        </div>
+        <div class="auth-panel">
+          <p class="auth-blurb">Dark navy header with four live KPI chips — total applications, approval rate, active portfolio value, and total collected. Pipeline progress bars and a 6-month bar chart render from real Supabase data.</p>
+          <div class="auth-note"><div class="k">KPI Chips</div><div class="v">Total apps · Approval rate · Active portfolio · Collected</div></div><div class="auth-note"><div class="k">Pipeline Chart</div><div class="v">Pending → Reviewing → Approved → Disbursed → Repaid</div></div><div class="auth-note"><div class="k">Monthly Trend</div><div class="v">6-month animated bar chart from live data</div></div><div class="auth-note"><div class="k">Stat Cards</div><div class="v">Pending · Reviewing · Approved · Rejected · Avg Loan</div></div>
+        </div>
+      </div>
+    </section>
+    <section class="page">
+      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">Admin Queue</div></div>
+      <div class="page-number">10 / 13</div>
+      <div class="section-header" style="margin-top:18mm;">
+        <div class="kicker">05 · Admin</div>
+        <h2>Application Queue & Search</h2>
+      </div>
+      <div class="auth-layout">
+        <div class="auth-wrap">
+          <div class="caption">Desktop &middot; 1440 &times; 900 &middot; Authenticated</div>
+          <div class="frame"><div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za &mdash; Admin — Queue</span></div>
+            <div class="frame-body auth-scroll"><img class="auth-img" src="shots/admin_queue.png"/></div>
+          </div>
+        </div>
+        <div class="auth-panel">
+          <p class="auth-blurb">Full application table with real-time search across name, email and ID, status filter dropdown, and sort toggle. Each row shows applicant, loan amount, status badge and a Review action button.</p>
+          <div class="auth-note"><div class="k">Search</div><div class="v">Real-time filter by name, email, ID number</div></div><div class="auth-note"><div class="k">Filter</div><div class="v">All · Pending · Under Review · Approved · Rejected</div></div><div class="auth-note"><div class="k">Table</div><div class="v">Applicant · ID · Amount · Status badge · Submitted date</div></div><div class="auth-note"><div class="k">Action</div><div class="v">Review button → opens detail view · auto status update</div></div>
+        </div>
+      </div>
+    </section>
+    <section class="page">
+      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">Application Form</div></div>
+      <div class="page-number">11 / 13</div>
+      <div class="section-header" style="margin-top:18mm;">
+        <div class="kicker">07 · Client Portal</div>
+        <h2>Loan Application — Multi-Step Form</h2>
+      </div>
+      <div class="auth-layout">
+        <div class="auth-wrap">
+          <div class="caption">Desktop &middot; 1440 &times; 900 &middot; Authenticated</div>
+          <div class="frame"><div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za &mdash; Apply</span></div>
+            <div class="frame-body auth-scroll"><img class="auth-img" src="shots/apply_form.png"/></div>
+          </div>
+        </div>
+        <div class="auth-panel">
+          <p class="auth-blurb">Protected multi-step form collects personal details, employment information, banking data, and document uploads. Live repayment calculator updates in real time. Supabase profile pre-fills returning applicants.</p>
+          <div class="auth-note"><div class="k">Steps</div><div class="v">Personal → Employment → Banking → Documents → Submit</div></div><div class="auth-note"><div class="k">Calculator</div><div class="v">Live repayment preview · interest · service fee · VAT</div></div><div class="auth-note"><div class="k">Auth gate</div><div class="v">Sign-in required · profile auto-saved to Supabase</div></div><div class="auth-note"><div class="k">Credit consent</div><div class="v">POPIA consent checkbox required before submission</div></div>
+        </div>
+      </div>
+    </section>
+    <section class="page">
+      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">Client Dashboard</div></div>
+      <div class="page-number">12 / 13</div>
+      <div class="section-header" style="margin-top:18mm;">
+        <div class="kicker">08 · Client Portal</div>
+        <h2>Client Dashboard — Application Tracker</h2>
+      </div>
+      <div class="auth-layout">
+        <div class="auth-wrap">
+          <div class="caption">Desktop &middot; 1440 &times; 900 &middot; Authenticated</div>
+          <div class="frame"><div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za &mdash; Dashboard — Tracker</span></div>
+            <div class="frame-body auth-scroll"><img class="auth-img" src="shots/dashboard_tracker.png"/></div>
+          </div>
+        </div>
+        <div class="auth-panel">
+          <p class="auth-blurb">Personal dark-navy header with real-time application status — Pending, Under Review, Approved, or Rejected — displayed prominently alongside a progress stepper. Loan contract and DebiCheck mandate status visible at a glance.</p>
+          <div class="auth-note"><div class="k">Status tracker</div><div class="v">Pending → Under Review → Approved → Disbursed → Repaid</div></div><div class="auth-note"><div class="k">Progress steps</div><div class="v">Visual stepper shows where application stands</div></div><div class="auth-note"><div class="k">Loan contract</div><div class="v">Contract status, number and signed date</div></div><div class="auth-note"><div class="k">DebiCheck badge</div><div class="v">Mandate status (sent / authenticated / rejected)</div></div>
+        </div>
+      </div>
+    </section>
+    <section class="page">
+      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">Client Dashboard — History</div></div>
+      <div class="page-number">13 / 13</div>
+      <div class="section-header" style="margin-top:18mm;">
+        <div class="kicker">09 · Client Portal</div>
+        <h2>Loan History & Documents</h2>
+      </div>
+      <div class="auth-layout">
+        <div class="auth-wrap">
+          <div class="caption">Desktop &middot; 1440 &times; 900 &middot; Authenticated</div>
+          <div class="frame"><div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za &mdash; Dashboard — History</span></div>
+            <div class="frame-body auth-scroll"><img class="auth-img" src="shots/dashboard_history.png"/></div>
+          </div>
+        </div>
+        <div class="auth-panel">
+          <p class="auth-blurb">Loan history tab lists all past and current applications with status badges and submitted dates. Documents tab shows uploaded payslips, bank statements and ID copy with size and MIME type. My Profile tab provides editable personal details.</p>
+          <div class="auth-note"><div class="k">History tab</div><div class="v">All applications · status · submitted date</div></div><div class="auth-note"><div class="k">Documents tab</div><div class="v">Payslips · bank statements · ID copy with metadata</div></div><div class="auth-note"><div class="k">Profile tab</div><div class="v">Editable personal details saved to Supabase profiles</div></div><div class="auth-note"><div class="k">Tabs</div><div class="v">Tracker · Loan History · Documents · My Profile</div></div>
+        </div>
+      </div>
+    </section></body></html>

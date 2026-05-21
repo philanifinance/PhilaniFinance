@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, CalendarDays, TrendingUp, Receipt, ShieldCheck, Zap, Lock, ChevronDown } from 'lucide-react';
+import { ArrowRight, CalendarDays, TrendingUp, ShieldCheck, Zap, Lock, ChevronDown } from 'lucide-react';
 import { calcLoan, formatCurrency, formatDate } from '../lib/loanCalculator';
 
 interface HeroProps {
@@ -14,11 +14,8 @@ const HERO_IMAGE = 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99
 
 export default function Hero({ isAuthenticated, onRequestAuth, onApply, onApplyWithParams }: HeroProps) {
   const [amount, setAmount] = useState(2000);
-  const [days, setDays] = useState(14);
-
-  const calc = useMemo(() => calcLoan(amount, days), [amount, days]);
+  const calc = useMemo(() => calcLoan(amount, 1), [amount]);
   const amountPct = ((amount - 500) / 7500) * 100;
-  const daysPct   = ((days - 1) / 34) * 100;
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
@@ -98,34 +95,19 @@ export default function Hero({ isAuthenticated, onRequestAuth, onApply, onApplyW
                 </div>
               </div>
 
-              {/* Term */}
-              <div className="mb-6">
-                <div className="flex justify-between items-baseline mb-3">
-                  <span className="text-navy-500 text-sm font-medium">Repayment period</span>
-                  <span className="font-display text-brand-600 font-extrabold text-2xl tabular-nums">{days}<span className="text-base text-navy-400 font-semibold"> days</span></span>
-                </div>
-                <input type="range" min={1} max={35} step={1} value={days}
-                  onChange={e => setDays(Number(e.target.value))} className="w-full cursor-pointer"
-                  style={{ '--range-pct': `${daysPct}%` } as React.CSSProperties} />
-                <div className="flex justify-between text-xs text-navy-400 mt-1.5 font-medium">
-                  <span>1 day</span><span>35 days</span>
-                </div>
-              </div>
 
               {/* Breakdown */}
               <div className="bg-slate-50 rounded-2xl divide-y divide-slate-100 mb-6 overflow-hidden">
-                {[
-                  { label: 'Interest', icon: TrendingUp, value: calc.interest },
-                  { label: 'Service Fee', icon: Receipt,   value: calc.serviceFee },
-                  { label: 'VAT (15%)',   icon: null,      value: calc.vat },
-                ].map(({ label, icon: I, value }) => (
-                  <div key={label} className="flex justify-between items-center px-5 py-3 text-sm">
-                    <span className="text-navy-500 flex items-center gap-2">
-                      {I && <I className="w-3.5 h-3.5 text-navy-400" />}{label}
-                    </span>
-                    <span className="text-navy-700 font-semibold tabular-nums">{formatCurrency(value)}</span>
-                  </div>
-                ))}
+                <div className="flex justify-between items-center px-5 py-3 text-sm">
+                  <span className="text-navy-500 flex items-center gap-2">
+                    <TrendingUp className="w-3.5 h-3.5 text-navy-400" />Interest &amp; Service Fees
+                  </span>
+                  <span className="text-navy-700 font-semibold tabular-nums">{formatCurrency(calc.interest)}</span>
+                </div>
+                <div className="flex justify-between items-center px-5 py-3 text-sm">
+                  <span className="text-navy-500">VAT (15%)</span>
+                  <span className="text-navy-700 font-semibold tabular-nums">{formatCurrency(calc.vat)}</span>
+                </div>
                 <div className="flex justify-between items-center px-5 py-3.5 bg-white">
                   <span className="text-navy-900 font-bold text-sm">Total Repayable</span>
                   <span className="font-display text-brand-600 font-extrabold text-lg tabular-nums">{formatCurrency(calc.totalRepayable)}</span>
@@ -138,7 +120,7 @@ export default function Hero({ isAuthenticated, onRequestAuth, onApply, onApplyW
 
               {/* CTA */}
               <button
-                onClick={() => isAuthenticated ? (onApplyWithParams ? onApplyWithParams(amount, days) : onApply()) : onRequestAuth()}
+                onClick={() => isAuthenticated ? (onApplyWithParams ? onApplyWithParams(amount, 1) : onApply()) : onRequestAuth()}
                 className="group w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2.5 transition-all duration-300 hover:shadow-xl hover:shadow-brand-500/35 hover:-translate-y-0.5"
               >
                 <span className="font-display text-base">

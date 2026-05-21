@@ -208,7 +208,7 @@ async function captureAuth(browser, session) {
 
 function renderHTML(pubSections, authSections) {
   const total = 2 + pubSections.length * 2 + authSections.length;
-  let pageIdx = 0;
+  let pageIdx = 1; // cover is page 1 (unnumbered); system page starts at 02
   const pn = () => `${String(++pageIdx).padStart(2,"0")} / ${String(total).padStart(2,"0")}`;
 
   const css = `
@@ -274,149 +274,290 @@ function renderHTML(pubSections, authSections) {
     .system-page .brand-name { color: white; }
     .system-page .brand-sub { color: rgba(255,255,255,0.3); }
     .system-page .page-number { color: rgba(255,255,255,0.25); }
+    /* Auth single-page layout */
+    .auth-layout { display: grid; grid-template-columns: 1.9fr 1fr; gap: 9mm; align-items: flex-start; margin-top: 3mm; height: calc(100% - 48mm); }
+    .auth-wrap { display: flex; flex-direction: column; }
+    .auth-wrap .caption { font-size: 7pt; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(15,23,42,0.48); margin-bottom: 3mm; font-weight: 600; font-family: 'Inter', sans-serif; }
+    .auth-scroll { max-height: 202mm; overflow: hidden; }
+    .auth-img { width: 100%; display: block; }
+    .auth-panel { display: flex; flex-direction: column; gap: 3.5mm; padding-top: 10mm; }
+    .auth-note { padding: 5mm 6mm; background: white; border-radius: 4pt; border: 1px solid rgba(15,23,42,0.07); }
+    .auth-note .k { font-size: 7pt; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(15,23,42,0.4); margin-bottom: 1.5mm; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .auth-note .v { font-size: 9pt; color: #0f172a; font-weight: 600; font-family: 'Poppins', sans-serif; line-height: 1.45; }
+    .auth-blurb { font-size: 8.5pt; color: rgba(15,23,42,0.6); line-height: 1.6; margin-bottom: 4mm; border-left: 2pt solid #22c55e; padding-left: 4mm; }
   `;
+
+  const brand = (sub) => `<div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">${sub}</div></div>`;
+  const fh = (url) => `<div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">${url}</span></div>`;
 
   const cover = `
     <section class="page cover">
-      <div class="brand">
-        <div class="brand-name">Philani <span>Finance</span></div>
-      </div>
+      <div class="brand"><div class="brand-name">Philani <span>Finance</span></div></div>
       <p class="tag">Digital Lending Platform &middot; Design Deck</p>
       <h1>Fast, fair credit.<br/><span>Built for South Africa.</span></h1>
-      <p class="sub">A design presentation for Philani Financial Services &mdash; showcasing the client-facing landing page, multi-step loan application portal, and admin analytics dashboard across desktop and mobile. Built with React 18, TypeScript, Tailwind CSS and Supabase.</p>
+      <p class="sub">A complete design presentation for Philani Financial Services &mdash; showcasing the landing page, loan application portal, client dashboard, and admin back-office across desktop and mobile. Built with React 18, TypeScript, Tailwind CSS and Supabase.</p>
       <div class="pill">NCR Reg: NCRCP18260 &middot; NCA &amp; POPIA Compliant</div>
       <div class="meta">
         <span>3663 Mtshilibe Street, Ratanda, Heidelberg, 1441</span>
         <span>013 752 2478 &middot; info@philanifinance.co.za</span>
       </div>
-    </section>
-  `;
+    </section>`;
 
   const system = `
     <section class="page system-page">
-      <div class="brand"><div class="brand-name">Philani <span>Finance</span></div><div class="brand-sub">Design System</div></div>
-      <div class="page-number">02 / ${2 + sections.length * 2}</div>
-      <div class="section-header" style="margin-top: 20mm;">
+      ${brand("Design System")}
+      <div class="page-number">${pn()}</div>
+      <div class="section-header" style="margin-top:20mm;">
         <div class="kicker">01 &middot; Foundations</div>
         <h2>The visual language</h2>
-        <p class="desc">A premium, trust-first palette anchored in deep navy and brand green &mdash; projecting financial authority while remaining approachable. Poppins ExtraBold for headlines, Inter for crisp body copy and data. Subtle glass surfaces, animated counters, and generous whitespace convey confidence.</p>
+        <p class="desc">A premium, trust-first palette anchored in deep navy and brand green — projecting financial authority while remaining approachable. Poppins ExtraBold for display, Inter for crisp body copy and data. Subtle card surfaces, animated counters, and generous whitespace convey confidence.</p>
       </div>
       <div class="palette">
         <div class="swatch"><div class="chip" style="background:#0f172a;"></div><div class="lbl">Navy 950</div><div class="hex">#0f172a</div></div>
         <div class="swatch"><div class="chip" style="background:#1e3a5f;"></div><div class="lbl">Navy 700</div><div class="hex">#1e3a5f</div></div>
         <div class="swatch"><div class="chip" style="background:#22c55e;"></div><div class="lbl">Brand Green</div><div class="hex">#22c55e</div></div>
-        <div class="swatch"><div class="chip" style="background:#f8fafc; border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">Slate 50</div><div class="hex">#f8fafc</div></div>
-        <div class="swatch"><div class="chip" style="background:#ffffff; border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">White</div><div class="hex">#ffffff</div></div>
+        <div class="swatch"><div class="chip" style="background:#f8fafc;border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">Slate 50</div><div class="hex">#f8fafc</div></div>
+        <div class="swatch"><div class="chip" style="background:#fff;border:1px solid rgba(255,255,255,0.15);"></div><div class="lbl">White</div><div class="hex">#ffffff</div></div>
       </div>
-      <div class="specs" style="margin-top: 8mm;">
+      <div class="specs" style="margin-top:8mm;">
         <div class="spec"><div class="k">Display Font</div><div class="v" style="font-family:'Poppins',sans-serif;font-weight:800;">Poppins &middot; ExtraBold 800</div></div>
         <div class="spec"><div class="k">Body Font</div><div class="v">Inter &middot; 300 / 400 / 500 / 600</div></div>
         <div class="spec"><div class="k">Backend</div><div class="v">Supabase &middot; PostgreSQL &middot; Edge Functions</div></div>
         <div class="spec"><div class="k">Tech Stack</div><div class="v">React 18 &middot; TypeScript &middot; Tailwind &middot; Vite</div></div>
       </div>
-    </section>
-  `;
+    </section>`;
 
-  const pages = sections.map((s, i) => `
+  // Public sections — desktop + mobile split, plus a notes page
+  const pubPages = pubSections.map((s, i) => {
+    const kicker = `0${i + 2} &middot; ${s.label}`;
+    return `
     <section class="page">
-      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">${s.label}</div></div>
-      <div class="page-number">${String(3 + i * 2).padStart(2,"0")} / ${2 + sections.length * 2}</div>
-      <div class="section-header" style="margin-top: 20mm;">
-        <div class="kicker">0${i + 2} &middot; ${s.label}</div>
+      ${brand(s.label)}
+      <div class="page-number">${pn()}</div>
+      <div class="section-header" style="margin-top:20mm;">
+        <div class="kicker">${kicker}</div>
         <h2>${s.heading}</h2>
         <p class="desc">${s.desc}</p>
       </div>
       <div class="layout">
         <div class="desktop-wrap">
           <div class="caption">Desktop &middot; 1440 &times; 900</div>
-          <div class="frame">
-            <div class="frame-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">philanifinance.co.za${s.path}</span></div>
-            <div class="frame-body desktop-scroll"><img class="desktop-img" src="${s.desktopShot}" /></div>
+          <div class="frame">${fh("philanifinance.co.za")}
+            <div class="frame-body desktop-scroll"><img class="desktop-img" src="${s.desktopShot}"/></div>
           </div>
         </div>
         <div class="mobile-wrap">
-          <div class="caption">Mobile &middot; 393 &times; 852 (iPhone 15 Pro)</div>
-          <div class="mobile-frame">
-            <div class="mobile-inner"><img class="mobile-img" src="${s.mobileShot}" /></div>
-          </div>
+          <div class="caption">Mobile &middot; 393 &times; 852</div>
+          <div class="mobile-frame"><div class="mobile-inner"><img class="mobile-img" src="${s.mobileShot}"/></div></div>
         </div>
       </div>
     </section>
     <section class="page">
-      <div class="brand"><div class="brand-name">Philani <span style="color:#22c55e;">Finance</span></div><div class="brand-sub">${s.label} &middot; Notes</div></div>
-      <div class="page-number">${String(4 + i * 2).padStart(2,"0")} / ${2 + sections.length * 2}</div>
-      <div class="section-header" style="margin-top: 20mm;">
-        <div class="kicker">Design notes</div>
+      ${brand(s.label + " &middot; Notes")}
+      <div class="page-number">${pn()}</div>
+      <div class="section-header" style="margin-top:20mm;"><div class="kicker">Design notes</div><h2>${s.heading}</h2></div>
+      <div class="notes">${s.notes}</div>
+      <div class="specs">${s.highlights.map(h => `<div class="spec"><div class="k">${h.k}</div><div class="v">${h.v}</div></div>`).join("")}</div>
+    </section>`;
+  }).join("");
+
+  // Auth sections — single page: desktop screenshot left, feature notes right
+  const authPages = authSections.map((s) => `
+    <section class="page">
+      ${brand(s.label)}
+      <div class="page-number">${pn()}</div>
+      <div class="section-header" style="margin-top:18mm;">
+        <div class="kicker">${s.kicker}</div>
         <h2>${s.heading}</h2>
       </div>
-      <div class="notes">${s.notes}</div>
-      <div class="specs">${s.highlights.map((h) => `<div class="spec"><div class="k">${h.k}</div><div class="v">${h.v}</div></div>`).join("")}</div>
-    </section>
-  `).join("");
+      <div class="auth-layout">
+        <div class="auth-wrap">
+          <div class="caption">Desktop &middot; 1440 &times; 900 &middot; Authenticated</div>
+          <div class="frame">${fh("philanifinance.co.za &mdash; " + s.urlLabel)}
+            <div class="frame-body auth-scroll"><img class="auth-img" src="${s.shot}"/></div>
+          </div>
+        </div>
+        <div class="auth-panel">
+          <p class="auth-blurb">${s.blurb}</p>
+          ${s.features.map(f => `<div class="auth-note"><div class="k">${f.k}</div><div class="v">${f.v}</div></div>`).join("")}
+        </div>
+      </div>
+    </section>`).join("");
 
   return `<!doctype html><html><head><meta charset="utf-8"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>${css}</style></head><body>${cover}${system}${pages}</body></html>`;
+  <style>${css}</style></head><body>${cover}${system}${pubPages}${authPages}</body></html>`;
 }
 
 async function main() {
+  await loadEnvFiles();
   await ensureDirs();
+
+  const ANON_KEY     = process.env.VITE_SUPABASE_ANON_KEY || "";
+  const ADMIN_EMAIL  = process.env.DEMO_ADMIN_EMAIL  || "";
+  const ADMIN_PASS   = process.env.DEMO_ADMIN_PASSWORD || "";
+  const hasAuth      = !!(ANON_KEY && ADMIN_EMAIL && ADMIN_PASS);
+
+  if (!hasAuth) {
+    console.warn("\n⚠  No credentials found — authenticated views will be skipped.");
+    console.warn("   Add DEMO_ADMIN_EMAIL and DEMO_ADMIN_PASSWORD to your .env file.\n");
+  }
+
   console.log("Launching browser…");
   const browser = await puppeteer.launch({ headless: "new" });
 
-  const captured = [];
-  for (const p of PAGES) {
-    console.log(`Capturing ${p.label}`);
-    const desktopShot = await capture(browser, p, DESKTOP);
-    const mobileShot = await capture(browser, p, MOBILE);
-    captured.push({ ...p, desktopShot, mobileShot });
-  }
+  // ── Public captures ──────────────────────────────────────────────────
+  console.log("\nCapturing public pages…");
+  const pub = await capturePublic(browser);
 
-  // Narrative copy per section
-  const sections = [
+  const pubSections = [
     {
-      ...captured[0],
+      label: "Landing Page", path: "/",
       heading: "Landing Page — the trust moment",
-      notes: `<b>Dark navy hero</b> with an embedded loan calculator — amount slider, term selector, and live repayment preview — anchors the above-the-fold experience. Animated stat counters (total loans, avg approval time, client satisfaction) build credibility on scroll.<br/><br/><b>TrustBar</b> presents key platform metrics with brand-green glows. <b>HowItWorks</b> uses a numbered four-step timeline. The <b>CtaBanner</b> is a cinematic full-bleed photo section with an NCR compliance badge and a single strong CTA. Every element is scroll-triggered with reveal animations.`,
+      desc: "Dark navy hero with live loan calculator, animated stat counters, trust badges and full-bleed CTA.",
+      desktopShot: pub.heroD, mobileShot: pub.heroM,
+      notes: `<b>Dark navy hero</b> with an embedded loan calculator — amount slider, term selector, and live repayment preview — anchors the above-the-fold experience. Animated stat counters (total disbursed, approval rate, client satisfaction) build instant credibility.<br/><br/><b>TrustBar</b> presents key platform metrics with brand-green icon glows. The <b>CtaBanner</b> is a cinematic full-bleed section with NCR compliance badge. Every element is scroll-triggered with reveal animations.`,
       highlights: [
-        { k: "Hero", v: "Loan calculator · Apply Now / Check Eligibility" },
+        { k: "Hero",         v: "Loan calculator · Apply Now / Check Eligibility" },
         { k: "Trust signals", v: "NCR NCRCP18260 · NCA & POPIA compliant" },
-        { k: "Header", v: "Transparent → solid navy on scroll" },
-        { k: "Animations", v: "Scroll reveal · animated stat counters" },
+        { k: "Header",       v: "Transparent → solid navy on scroll" },
+        { k: "Animations",   v: "Scroll reveal · animated stat counters" },
       ],
     },
     {
-      ...captured[1],
+      label: "How It Works", path: "/#how-it-works",
       heading: "How It Works — four steps to funds",
-      notes: `<b>Numbered step timeline</b> with icons, time estimates and color-coded cards walks applicants through the journey: Apply (2 min) → Verify → Approve → Payout (same day). A feature image with floating trust badges adds credibility without clutter.<br/><br/>The layout adapts cleanly to mobile — steps stack vertically and the image collapses gracefully below the timeline.`,
+      desc: "Numbered timeline walks applicants through Apply → Verify → Approve → Payout with time estimates.",
+      desktopShot: pub.hiwD, mobileShot: pub.hiwM,
+      notes: `<b>Numbered step timeline</b> with icons, estimated durations and color-coded cards walks applicants through the full journey: Apply (2 min) → Verify documents → Approve → Payout (same day). A feature image with floating trust badges adds credibility without clutter.<br/><br/>The layout adapts cleanly to mobile — steps stack vertically and the image collapses gracefully.`,
       highlights: [
-        { k: "Steps", v: "Apply → Verify documents → Approve → Payout" },
+        { k: "Steps",         v: "Apply → Verify documents → Approve → Payout" },
         { k: "Time estimates", v: "Avg 2 min application · Same-day payout" },
-        { k: "Mobile layout", v: "Vertical stack · full-width feature image" },
-        { k: "Animation", v: "Step-by-step scroll reveal" },
+        { k: "Mobile layout",  v: "Vertical stack · full-width feature image" },
+        { k: "Animation",      v: "Step-by-step scroll reveal" },
       ],
     },
     {
-      ...captured[2],
+      label: "FAQ & CTA", path: "/#faq",
       heading: "FAQ & CTA — compliance and conversion",
-      notes: `<b>Accordion FAQ</b> with smooth expand/collapse answers common borrower questions around eligibility, repayment, and NCR compliance. Open state highlights in brand-green with chevron rotation provide clear visual feedback.<br/><br/>Below the FAQ sits the <b>CtaBanner</b> — a cinematic full-bleed conversion section with NCR compliance badge. The navy footer lists address, NCR registration, and all legal links.`,
+      desc: "Smooth accordion FAQ covering eligibility, repayment and NCR compliance, followed by conversion CTA.",
+      desktopShot: pub.faqD, mobileShot: pub.faqM,
+      notes: `<b>Accordion FAQ</b> with smooth expand/collapse answers common borrower questions around eligibility, repayment, and NCR compliance. Open state highlights in brand-green with chevron rotation provide clear visual feedback.<br/><br/>Below the FAQ the <b>CtaBanner</b> is a full-bleed conversion section with NCR compliance badge. The navy footer lists address, NCR registration, and all legal links.`,
       highlights: [
-        { k: "FAQ", v: "Accordion · smooth height animation" },
-        { k: "Open state", v: "Brand-green border-left · box-shadow glow" },
-        { k: "Compliance", v: "NCR Reg NCRCP18260 · NCA reference" },
-        { k: "Footer", v: "Address · phone · legal links · NCA warning" },
+        { k: "FAQ",        v: "Accordion · smooth height animation" },
+        { k: "Open state",  v: "Brand-green border-left · glow shadow" },
+        { k: "Compliance",  v: "NCR Reg NCRCP18260 · NCA reference" },
+        { k: "Footer",      v: "Address · phone · legal links · NCA warning" },
       ],
     },
   ];
 
-  const html = renderHTML(sections);
+  // ── Authenticated captures ────────────────────────────────────────────
+  let authSections = [];
+
+  if (hasAuth) {
+    console.log("\nSigning in as " + ADMIN_EMAIL + "…");
+    const session = await supabaseSignIn(ADMIN_EMAIL, ADMIN_PASS, ANON_KEY);
+    console.log("✓ Authenticated\n");
+    console.log("Capturing authenticated views…");
+    const auth = await captureAuth(browser, session);
+
+    authSections = [
+      {
+        label: "Admin Dashboard", kicker: "04 · Admin",
+        heading: "Analytics & Portfolio Overview",
+        urlLabel: "Admin Dashboard",
+        shot: auth.adminAnalytics,
+        blurb: "Dark navy header with four live KPI chips — total applications, approval rate, active portfolio value, and total collected. Pipeline progress bars and a 6-month bar chart render from real Supabase data.",
+        features: [
+          { k: "KPI Chips",       v: "Total apps · Approval rate · Active portfolio · Collected" },
+          { k: "Pipeline Chart",  v: "Pending → Reviewing → Approved → Disbursed → Repaid" },
+          { k: "Monthly Trend",   v: "6-month animated bar chart from live data" },
+          { k: "Stat Cards",      v: "Pending · Reviewing · Approved · Rejected · Avg Loan" },
+        ],
+      },
+      {
+        label: "Admin Queue", kicker: "05 · Admin",
+        heading: "Application Queue & Search",
+        urlLabel: "Admin — Queue",
+        shot: auth.adminQueue,
+        blurb: "Full application table with real-time search across name, email and ID, status filter dropdown, and sort toggle. Each row shows applicant, loan amount, status badge and a Review action button.",
+        features: [
+          { k: "Search",   v: "Real-time filter by name, email, ID number" },
+          { k: "Filter",   v: "All · Pending · Under Review · Approved · Rejected" },
+          { k: "Table",    v: "Applicant · ID · Amount · Status badge · Submitted date" },
+          { k: "Action",   v: "Review button → opens detail view · auto status update" },
+        ],
+      },
+      ...(auth.adminDetail ? [{
+        label: "Application Detail", kicker: "06 · Admin",
+        heading: "Application Review & Action Center",
+        urlLabel: "Admin — Detail",
+        shot: auth.adminDetail,
+        blurb: "Full applicant profile, employment info, banking details, uploaded documents, credit bureau check, internal notes, DebiCheck mandate control, disbursement tracking, and loan contract generation — all in one view.",
+        features: [
+          { k: "Action Center",   v: "Approve / Reject with mandatory comment" },
+          { k: "Credit Check",    v: "Live bureau query · identity verification · score band" },
+          { k: "DebiCheck",       v: "NuPay TT1 real-time push mandate initiation" },
+          { k: "Disbursement",    v: "Mark disbursed · payment received lifecycle" },
+          { k: "Audit Log",       v: "Every action timestamped and stored (POPIA)" },
+        ],
+      }] : []),
+      {
+        label: "Application Form", kicker: "07 · Client Portal",
+        heading: "Loan Application — Multi-Step Form",
+        urlLabel: "Apply",
+        shot: auth.applyForm,
+        blurb: "Protected multi-step form collects personal details, employment information, banking data, and document uploads. Live repayment calculator updates in real time. Supabase profile pre-fills returning applicants.",
+        features: [
+          { k: "Steps",        v: "Personal → Employment → Banking → Documents → Submit" },
+          { k: "Calculator",   v: "Live repayment preview · interest · service fee · VAT" },
+          { k: "Auth gate",    v: "Sign-in required · profile auto-saved to Supabase" },
+          { k: "Credit consent", v: "POPIA consent checkbox required before submission" },
+        ],
+      },
+      {
+        label: "Client Dashboard", kicker: "08 · Client Portal",
+        heading: "Client Dashboard — Application Tracker",
+        urlLabel: "Dashboard — Tracker",
+        shot: auth.dashTracker,
+        blurb: "Personal dark-navy header with real-time application status — Pending, Under Review, Approved, or Rejected — displayed prominently alongside a progress stepper. Loan contract and DebiCheck mandate status visible at a glance.",
+        features: [
+          { k: "Status tracker",  v: "Pending → Under Review → Approved → Disbursed → Repaid" },
+          { k: "Progress steps",  v: "Visual stepper shows where application stands" },
+          { k: "Loan contract",   v: "Contract status, number and signed date" },
+          { k: "DebiCheck badge", v: "Mandate status (sent / authenticated / rejected)" },
+        ],
+      },
+      {
+        label: "Client Dashboard — History", kicker: "09 · Client Portal",
+        heading: "Loan History & Documents",
+        urlLabel: "Dashboard — History",
+        shot: auth.dashHistory,
+        blurb: "Loan history tab lists all past and current applications with status badges and submitted dates. Documents tab shows uploaded payslips, bank statements and ID copy with size and MIME type. My Profile tab provides editable personal details.",
+        features: [
+          { k: "History tab",   v: "All applications · status · submitted date" },
+          { k: "Documents tab", v: "Payslips · bank statements · ID copy with metadata" },
+          { k: "Profile tab",   v: "Editable personal details saved to Supabase profiles" },
+          { k: "Tabs",          v: "Tracker · Loan History · Documents · My Profile" },
+        ],
+      },
+    ];
+  }
+
+  await browser.close();
+
+  // ── Render PDF ────────────────────────────────────────────────────────
+  console.log("\nRendering PDF…");
+  const html = renderHTML(pubSections, authSections);
   const htmlFile = path.join(OUT_DIR, "deck.html");
   await fs.writeFile(htmlFile, html, "utf8");
 
-  console.log("Rendering PDF…");
-  const pdfPage = await browser.newPage();
+  const pdfBrowser = await puppeteer.launch({ headless: "new" });
+  const pdfPage = await pdfBrowser.newPage();
   await pdfPage.goto("file:///" + htmlFile.replaceAll("\\", "/"), { waitUntil: "networkidle0" });
+  await new Promise(r => setTimeout(r, 2000)); // let Google Fonts settle
   const pdfPath = path.join(OUT_DIR, "Philani-Finance_Design-Deck.pdf");
   await pdfPage.pdf({
     path: pdfPath,
@@ -426,11 +567,11 @@ async function main() {
     preferCSSPageSize: true,
   });
   await pdfPage.close();
+  await pdfBrowser.close();
 
-  await browser.close();
   const stat = await fs.stat(pdfPath);
-  console.log(`\n✓ Deck ready: ${pdfPath}`);
-  console.log(`  Size: ${(stat.size / 1024 / 1024).toFixed(2)} MB`);
+  console.log(`\n✓ Deck ready → ${pdfPath}`);
+  console.log(`  Pages: ${2 + pubSections.length * 2 + authSections.length}  |  Size: ${(stat.size / 1024 / 1024).toFixed(2)} MB`);
 }
 
 main().catch((err) => {

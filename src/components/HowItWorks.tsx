@@ -104,7 +104,7 @@ export default function HowItWorks() {
                 <div className="bg-white/90 backdrop-blur-xl rounded-2xl px-5 py-4 shadow-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-navy-900 font-black text-xl font-display">~5 min</p>
+                      <p className="text-navy-900 font-black text-xl font-display">~15 min</p>
                       <p className="text-navy-500 text-xs mt-0.5">Average application time</p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center animate-float">
