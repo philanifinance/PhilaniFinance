@@ -14,7 +14,7 @@ const benefits = [
     icon: Zap,
     title: 'Instant Verification',
     desc: 'Skip the queues entirely. Upload your documents digitally — verified in seconds, not days.',
-    accent: '#22c55e',
+    accent: '#fc5107',
   },
   {
     icon: Eye,

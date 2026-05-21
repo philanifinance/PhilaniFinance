@@ -11,7 +11,7 @@ const steps = [
     title: 'Create Your Profile',
     desc: 'Sign up in under a minute. Your data is encrypted end-to-end from the first keystroke.',
     time: '< 1 min',
-    accent: '#22c55e',
+    accent: '#fc5107',
   },
   {
     num: 2,

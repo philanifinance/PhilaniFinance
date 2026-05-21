@@ -31,7 +31,7 @@ export default function AuthGuard({ isAuthenticated, onRequestAuth, children }: 
           </p>
           <button
             onClick={onRequestAuth}
-            className="inline-flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-green-500/25"
+            className="inline-flex items-center gap-2 bg-[#fc5107] hover:bg-[#e03d00] text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-green-500/25"
           >
             <LogIn className="w-5 h-5" />
             Sign In to Apply

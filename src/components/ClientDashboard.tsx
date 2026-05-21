@@ -397,7 +397,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                         className={`flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-colors ${
                           contract.status === 'signed'
                             ? 'bg-green-200 hover:bg-green-300 text-green-800'
-                            : 'bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-sm'
+                            : 'bg-[#fc5107] hover:bg-[#e03d00] text-white shadow-sm'
                         }`}
                       >
                         <Pen className="w-3.5 h-3.5" />
@@ -792,7 +792,7 @@ function ProfileTab({ profile, userEmail, updateProfile }: {
                 <X className="w-4 h-4" /> Cancel
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] hover:bg-[#16a34a] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#fc5107] hover:bg-[#e03d00] text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -810,7 +810,7 @@ function ProfileTab({ profile, userEmail, updateProfile }: {
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
           <h2 className="font-bold text-gray-900 flex items-center gap-2">
-            <User className="w-4 h-4 text-[#22c55e]" /> Personal Information
+            <User className="w-4 h-4 text-[#fc5107]" /> Personal Information
           </h2>
           <span className="text-xs text-gray-400 flex items-center gap-1"><Shield className="w-3.5 h-3.5" /> Auto-filled on new applications</span>
         </div>
@@ -827,7 +827,7 @@ function ProfileTab({ profile, userEmail, updateProfile }: {
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="border-b border-gray-100 px-6 py-4">
           <h2 className="font-bold text-gray-900 flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-[#22c55e]" /> Employment Details
+            <Briefcase className="w-4 h-4 text-[#fc5107]" /> Employment Details
           </h2>
         </div>
         <div className="grid sm:grid-cols-2 gap-5 p-6">
@@ -837,7 +837,7 @@ function ProfileTab({ profile, userEmail, updateProfile }: {
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">Pay Date</label>
               <select value={draft.payDate} onChange={e => upd('payDate', e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors">
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#fc5107]/50 transition-colors">
                 <option value="">Select pay date</option>
                 {PAY_DATES.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
@@ -852,7 +852,7 @@ function ProfileTab({ profile, userEmail, updateProfile }: {
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="border-b border-gray-100 px-6 py-4">
           <h2 className="font-bold text-gray-900 flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-[#22c55e]" /> Banking Details
+            <Building2 className="w-4 h-4 text-[#fc5107]" /> Banking Details
           </h2>
         </div>
         <div className="grid sm:grid-cols-2 gap-5 p-6">
@@ -860,7 +860,7 @@ function ProfileTab({ profile, userEmail, updateProfile }: {
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">Bank Name</label>
               <select value={draft.bankName} onChange={e => upd('bankName', e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors">
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#fc5107]/50 transition-colors">
                 <option value="">Select your bank</option>
                 {SA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
@@ -875,7 +875,7 @@ function ProfileTab({ profile, userEmail, updateProfile }: {
               <div className="grid grid-cols-3 gap-2">
                 {['cheque', 'savings', 'transmission'].map(type => (
                   <button key={type} type="button" onClick={() => upd('accountType', type)}
-                    className={`py-2.5 rounded-xl border text-sm font-semibold capitalize transition-all duration-200 ${draft.accountType === type ? 'bg-[#22c55e] border-[#22c55e] text-white' : 'border-gray-200 text-gray-600 hover:border-[#22c55e]/40'}`}>
+                    className={`py-2.5 rounded-xl border text-sm font-semibold capitalize transition-all duration-200 ${draft.accountType === type ? 'bg-[#fc5107] border-[#fc5107] text-white' : 'border-gray-200 text-gray-600 hover:border-[#fc5107]/40'}`}>
                     {type}
                   </button>
                 ))}
@@ -936,7 +936,7 @@ function EditableField({ label, value, editing, onChange, placeholder, type = 't
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-2.5 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors placeholder:text-gray-400 ${prefix ? 'pl-8 pr-4' : 'px-4'} ${mono ? 'font-mono' : ''}`}
+          className={`w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl py-2.5 text-sm focus:outline-none focus:border-[#fc5107]/50 transition-colors placeholder:text-gray-400 ${prefix ? 'pl-8 pr-4' : 'px-4'} ${mono ? 'font-mono' : ''}`}
         />
       </div>
     </div>

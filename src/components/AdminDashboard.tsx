@@ -893,7 +893,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
               {selectedApp.status === 'approved' && (
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#22c55e]" /> Loan Contract
+                    <FileText className="w-4 h-4 text-[#fc5107]" /> Loan Contract
                   </h3>
                   {loanContract && (
                     <div className="mb-4">
@@ -912,7 +912,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                   )}
                   <button
                     onClick={() => setContractOpen(true)}
-                    className="w-full flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-green-500/20"
+                    className="w-full flex items-center justify-center gap-2 bg-[#fc5107] hover:bg-[#e03d00] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-green-500/20"
                   >
                     <FileText className="w-4 h-4" />
                     {!loanContract ? 'Generate Loan Contract' : loanContract.status === 'signed' ? 'View Signed Contract' : 'View / Download Contract'}
@@ -1174,7 +1174,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                   ? 'e.g., All documents verified, income sufficient...'
                   : 'e.g., Insufficient income, missing bank statements...'}
                 rows={4}
-                className="mt-2 w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors resize-none"
+                className="mt-2 w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 text-sm focus:outline-none focus:border-[#fc5107]/50 transition-colors resize-none"
               />
               <div className="flex gap-3 mt-5">
                 <button onClick={() => setDecisionOpen(false)}
@@ -1184,7 +1184,7 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                 <button onClick={submitDecision}
                   disabled={!decisionComment.trim() || submittingDecision}
                   className={`flex-1 py-3 font-semibold rounded-xl text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    decisionType === 'approved' ? 'bg-[#22c55e] hover:bg-[#16a34a]' : 'bg-red-500 hover:bg-red-600'
+                    decisionType === 'approved' ? 'bg-[#fc5107] hover:bg-[#e03d00]' : 'bg-red-500 hover:bg-red-600'
                   }`}>
                   {submittingDecision ? (
                     <span className="flex items-center justify-center gap-2">

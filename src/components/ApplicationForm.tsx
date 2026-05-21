@@ -170,7 +170,7 @@ export default function ApplicationForm({
     if (!cat) return null;
     return (
       <>
-        <label className="flex items-center justify-center w-full bg-white border-2 border-dashed border-gray-200 rounded-xl px-4 py-6 cursor-pointer hover:border-[#22c55e]/40 transition-colors">
+        <label className="flex items-center justify-center w-full bg-white border-2 border-dashed border-gray-200 rounded-xl px-4 py-6 cursor-pointer hover:border-[#fc5107]/40 transition-colors">
           <input type="file" multiple={cat.requiredCount > 1} accept=".pdf,.jpg,.jpeg,.png" className="hidden"
             onChange={e => handleFileChange(cat.id, e.target.files)} />
           <div className="text-center">
@@ -209,10 +209,10 @@ export default function ApplicationForm({
       <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-gray-900 font-semibold text-sm flex items-center gap-2">
-            {isComplete ? <FileCheck className="w-4 h-4 text-[#22c55e]" /> : <Upload className="w-4 h-4 text-gray-400" />}
+            {isComplete ? <FileCheck className="w-4 h-4 text-[#fc5107]" /> : <Upload className="w-4 h-4 text-gray-400" />}
             {cat.label}
           </span>
-          <span className={`text-xs font-medium ${isComplete ? 'text-[#22c55e]' : 'text-amber-600'}`}>
+          <span className={`text-xs font-medium ${isComplete ? 'text-[#fc5107]' : 'text-amber-600'}`}>
             {cat.files.length} / {cat.requiredCount} uploaded
           </span>
         </div>
@@ -596,7 +596,7 @@ export default function ApplicationForm({
               <div>
                 <Field label="SA ID Number (13 digits)" value={form.idNumber} onChange={v => update('idNumber', v.replace(/\D/g, '').slice(0, 13))} placeholder="8001015009087" type="text" inputMode="numeric" />
                 {idError && <p className="mt-1.5 text-red-500 text-xs flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{idError}</p>}
-                {idSuccess && <p className="mt-1.5 text-[#22c55e] text-xs flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" />{idSuccess}</p>}
+                {idSuccess && <p className="mt-1.5 text-[#fc5107] text-xs flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" />{idSuccess}</p>}
               </div>
               <Field label="Mobile Number" value={form.mobileNumber} onChange={v => update('mobileNumber', v)} placeholder="082 000 0000" type="tel" />
               <Field label="Email Address" value={form.email} onChange={v => update('email', v)} placeholder="sipho@email.com" type="email" />
@@ -665,11 +665,11 @@ export default function ApplicationForm({
               <div className="bg-gradient-to-br from-blue-50 to-blue-50/30 rounded-xl border border-blue-200 p-5">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-gray-900 font-semibold text-sm flex items-center gap-2">
-                    {ozowComplete ? <ShieldCheck className="w-4 h-4 text-[#22c55e]" /> : <Building2 className="w-4 h-4 text-blue-600" />}
+                    {ozowComplete ? <ShieldCheck className="w-4 h-4 text-[#fc5107]" /> : <Building2 className="w-4 h-4 text-blue-600" />}
                     Bank Statements (3 Months)
                   </span>
                   {ozowComplete && (
-                    <span className="text-xs font-semibold text-[#22c55e] bg-green-100 px-2.5 py-0.5 rounded-full">✓ Verified via Ozow</span>
+                    <span className="text-xs font-semibold text-[#fc5107] bg-green-100 px-2.5 py-0.5 rounded-full">✓ Verified via Ozow</span>
                   )}
                 </div>
 
@@ -748,7 +748,7 @@ export default function ApplicationForm({
                       {(() => {
                         const cat = docs.find(d => d.id === 'bank_statements');
                         return cat ? (
-                          <span className={`text-xs font-medium ${cat.files.length >= cat.requiredCount ? 'text-[#22c55e]' : 'text-amber-600'}`}>
+                          <span className={`text-xs font-medium ${cat.files.length >= cat.requiredCount ? 'text-[#fc5107]' : 'text-amber-600'}`}>
                             {cat.files.length} / {cat.requiredCount} uploaded
                           </span>
                         ) : null;
@@ -766,7 +766,7 @@ export default function ApplicationForm({
               {renderDocCategory('id_copy')}
 
               {uploadProgress && (
-                <div className="bg-[#22c55e]/10 border border-[#22c55e]/20 rounded-xl px-4 py-3 text-[#22c55e] text-sm flex items-center gap-2">
+                <div className="bg-[#fc5107]/10 border border-[#fc5107]/20 rounded-xl px-4 py-3 text-[#fc5107] text-sm flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   {uploadProgress}
                 </div>
@@ -784,7 +784,7 @@ export default function ApplicationForm({
                         setCreditConsent(e.target.checked);
                         setCreditConsentAt(e.target.checked ? new Date().toISOString() : null);
                       }}
-                      className="w-4 h-4 rounded border-gray-300 text-[#22c55e] focus:ring-[#22c55e] cursor-pointer"
+                      className="w-4 h-4 rounded border-gray-300 text-[#fc5107] focus:ring-[#fc5107] cursor-pointer"
                     />
                   </div>
                   <label htmlFor="credit-consent" className="cursor-pointer">
@@ -833,7 +833,7 @@ export default function ApplicationForm({
               <button
                 onClick={() => setStep(s => s + 1)}
                 disabled={!canProceed()}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all duration-200"
+                className="flex-1 flex items-center justify-center gap-2 bg-[#fc5107] hover:bg-[#e03d00] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all duration-200"
               >
                 Continue <ChevronRight className="w-4 h-4" />
               </button>
@@ -841,7 +841,7 @@ export default function ApplicationForm({
               <button
                 onClick={handleSubmit}
                 disabled={!canProceed() || submitting}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all duration-200"
+                className="flex-1 flex items-center justify-center gap-2 bg-[#fc5107] hover:bg-[#e03d00] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all duration-200"
               >
                 {submitting ? (
                   <>
