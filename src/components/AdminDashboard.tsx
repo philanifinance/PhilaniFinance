@@ -1280,6 +1280,12 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                 <BarChart3 className="w-7 h-7 text-brand-400" /> Dashboard
               </h1>
               <p className="text-white/40 text-sm mt-1.5">Review, process, and manage loan applications.</p>
+              <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.24em] flex items-center gap-2">
+                <span className="h-px w-5 bg-brand-500/40 flex-shrink-0" />
+                <span className="text-white/35">Pay Day Too Far</span>
+                <span className="text-brand-500 mx-0.5">·</span>
+                <span className="text-brand-400">We Got You</span>
+              </p>
             </div>
             <button onClick={fetchApplications}
               className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.1] text-white/70 hover:text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-white/[0.1] transition-all self-end">

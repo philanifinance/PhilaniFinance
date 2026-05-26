@@ -21,8 +21,14 @@ export default function Footer() {
             <div className="mb-5">
               <PFLogoLight />
             </div>
-            <p className="text-navy-400 text-sm leading-relaxed mb-6 max-w-xs">
+            <p className="text-navy-400 text-sm leading-relaxed mb-4 max-w-xs">
               A responsible South African micro-lender committed to transparent, affordable, and fair credit for all.
+            </p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] flex items-center gap-2 mb-6">
+              <span className="h-px w-5 bg-brand-500/40 flex-shrink-0" />
+              <span className="text-navy-500">Pay Day Too Far</span>
+              <span className="text-brand-500 mx-0.5">·</span>
+              <span className="text-brand-400">We Got You</span>
             </p>
             {/* Contact */}
             <div className="space-y-2">

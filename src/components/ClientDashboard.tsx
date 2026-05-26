@@ -226,6 +226,12 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                 Welcome back, {profile.firstName || user.email?.split('@')[0]}
               </h1>
               <p className="text-white/50 text-sm mt-1.5">Manage your loan applications and personal information.</p>
+              <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.24em] flex items-center gap-2">
+                <span className="h-px w-5 bg-brand-500/40 flex-shrink-0" />
+                <span className="text-white/35">Pay Day Too Far</span>
+                <span className="text-brand-500 mx-0.5">·</span>
+                <span className="text-brand-400">We Got You</span>
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <button onClick={fetchApplications}

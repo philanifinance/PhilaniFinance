@@ -47,11 +47,20 @@ export default function Hero({ isAuthenticated, onRequestAuth, onApply, onApplyW
               <span className="text-white/70 text-xs font-medium tracking-wide">Applications Open · Instant Decisions</span>
             </div>
 
-            <h1 className="font-display font-extrabold text-white leading-[1.06] tracking-tight mb-6"
+            <h1 className="font-display font-extrabold text-white leading-[1.06] tracking-tight mb-4"
                 style={{ fontSize: 'clamp(2.4rem, 5vw, 3.8rem)' }}>
               The Smarter Way<br />
               to <span className="gradient-text">Borrow Money</span>
             </h1>
+
+            <div className="flex items-center gap-3 mb-7">
+              <span className="h-px w-8 bg-brand-500/50 flex-shrink-0" />
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.26em] whitespace-nowrap">
+                <span className="text-white/45">Pay Day Too Far</span>
+                <span className="text-brand-500 mx-2">·</span>
+                <span className="text-brand-400">We Got You</span>
+              </p>
+            </div>
 
             <p className="text-white/60 text-lg leading-relaxed mb-10 max-w-md">
               Secure, fully digital micro-loans for South Africans. No queues, no paperwork — a decision within hours.
