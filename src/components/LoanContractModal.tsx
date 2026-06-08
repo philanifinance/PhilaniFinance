@@ -59,7 +59,7 @@ const COMPANY = {
   ncr: 'NCRCP18260',
   reg: 'NCRCP18260',
   address: '3663 Mtshilibe Street, Ratanda, Heidelberg, 1441',
-  phone: '013 752 2478',
+  phone: '+27 83 399 4697',
   email: 'info@philanifinance.co.za',
 };
 

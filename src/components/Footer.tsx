@@ -36,9 +36,9 @@ export default function Footer() {
                 <Mail className="w-4 h-4 text-brand-500" />
                 info@philanifinance.co.za
               </a>
-              <a href="tel:+27137522478" className="flex items-center gap-2 text-navy-400 hover:text-white transition-colors text-sm">
+              <a href="tel:+27833994697" className="flex items-center gap-2 text-navy-400 hover:text-white transition-colors text-sm">
                 <Phone className="w-4 h-4 text-brand-500" />
-                013 752 2478
+                +27 83 399 4697
               </a>
             </div>
           </div>
