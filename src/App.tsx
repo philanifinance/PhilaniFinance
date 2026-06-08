@@ -7,6 +7,7 @@ import HowItWorks from './components/HowItWorks';
 import ApplicationForm from './components/ApplicationForm';
 import FAQ from './components/FAQ';
 import CtaBanner from './components/CtaBanner';
+import Testimonials from './components/Testimonials';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import AdminDashboard from './components/AdminDashboard';
@@ -229,6 +230,7 @@ function AppInner() {
       <HowItWorks />
       <FAQ />
       <CtaBanner isAuthenticated={isAuthenticated} onApply={goToApply} onRequestAuth={() => openAuthModal('login')} />
+      <Testimonials />
       <Footer />
       <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} onLogin={signIn} onSignUp={signUp} defaultMode={authDefaultMode} onSuccess={handleAuthSuccess} />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
