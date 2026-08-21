@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase';
 import { logAudit } from '../lib/auditLog';
 import DebiCheckModal, { MandateStatusBadge, type MandateRecord } from './DebiCheckModal';
 import LoanContractModal, { type LoanContractRecord } from './LoanContractModal';
+import MandateManagementPanel from './MandateManagementPanel';
 
 // ── Types ────────────────────────────────────────────────────────────
 interface LoanApplication {
@@ -957,6 +958,17 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                     </p>
                   )}
                 </div>
+              )}
+
+              {/* ── Mandate Management Panel ──────────────────── */}
+              {mandate && selectedApp && (
+                <MandateManagementPanel
+                  mandate={mandate}
+                  applicationId={selectedApp.id}
+                  onMandateUpdate={(updated) => {
+                    setMandate(updated);
+                  }}
+                />
               )}
 
               {/* ── Disbursement Actions ────────────────────── */}

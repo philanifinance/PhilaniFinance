@@ -10,6 +10,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useProfile, type ProfileData } from '../lib/ProfileContext';
 import LoanContractModal, { type LoanContractRecord } from './LoanContractModal';
+import ClientMandateStatus from './ClientMandateStatus';
 
 // ── Types ────────────────────────────────────────────────────────────
 interface LoanApplication {
@@ -422,6 +423,17 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                       <p className="text-sm text-blue-600 mt-1">Your loan has been approved. A loan agreement contract is being prepared for your signature. Check back shortly.</p>
                     </div>
                   </div>
+                )}
+
+                {/* ── DebiCheck Mandate Status ──────────────────────── */}
+                {activeApp.status === 'approved' && contract?.status === 'signed' && (
+                  <ClientMandateStatus
+                    mandate={mandate}
+                    applicationId={activeApp.id}
+                    onMandateUpdate={(updated) => {
+                      setMandate(updated);
+                    }}
+                  />
                 )}
 
                 {/* ── Active Loan Summary (disbursed) ───────────────── */}
