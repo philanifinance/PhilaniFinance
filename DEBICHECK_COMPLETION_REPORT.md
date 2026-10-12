@@ -1,5 +1,10 @@
 # DebiCheck Integration - Completion Report
 
+> **⚠️ DEPRECATED:** This describes an assumed API shape (JWT auth, Terminal ID,
+> webhooks) that does not match NuPay's actual DebiCheck webservices. See
+> [`NUPAY_DEBICHECK_INTEGRATION.md`](./NUPAY_DEBICHECK_INTEGRATION.md) for the
+> corrected integration. Safe to delete this file.
+
 **Project**: PhilaniFinance Dashboard - DebiCheck Backend Integration
 **Date Completed**: August 21, 2026
 **Status**: ✅ COMPLETE - Ready for Deployment

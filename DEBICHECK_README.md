@@ -1,5 +1,11 @@
 # DebiCheck Integration for PhilaniFinance
 
+> **⚠️ DEPRECATED:** This navigation page and the docs it points to describe
+> an assumed API shape (JWT auth, Terminal ID, webhooks) that does not match
+> NuPay's actual DebiCheck webservices. See
+> [`NUPAY_DEBICHECK_INTEGRATION.md`](./NUPAY_DEBICHECK_INTEGRATION.md) for the
+> corrected integration. Safe to delete this file.
+
 Welcome to the DebiCheck integration documentation. This README provides an overview and navigation guide for all DebiCheck-related documentation and code.
 
 ## 📋 Quick Navigation

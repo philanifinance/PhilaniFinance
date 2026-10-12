@@ -1,0 +1,224 @@
+// Shared helpers for NuPay DebiCheck webservice integration.
+//
+// Source of truth: the specification PDFs in the "NuPayment Integration"
+// folder (Mandate Initiation v3.7, Mandate Maintenance v3, Mandate Status
+// v1.5, Settlement Report v1.4, Mandate and Instalment Reporting v2.6).
+//
+// Important: there is no webhook/push mechanism documented anywhere in the
+// NuPay DebiCheck specs. Every method is a synchronous JSON request/response
+// webservice, authenticated per-request with a Base64("username:password")
+// string in the "auth" field of the request body (not an HTTP header, and
+// not a bearer token obtained from a separate auth endpoint). Status updates
+// are obtained by polling the Mandate Status webservice.
+
+export const NUPAY_BASE_URL = 'https://btm.nupay.co.za/wsDebiCheck';
+
+export function nupayAuth(): string {
+  const username = Deno.env.get('NUPAY_USERNAME') || '';
+  const password = Deno.env.get('NUPAY_PASSWORD') || '';
+  return btoa(`${username}:${password}`);
+}
+
+// Card acceptor / merchant number / access_id — must be zero-padded to 15 digits.
+export function merchantNumber(): string {
+  const raw = Deno.env.get('NUPAY_MERCHANT_ID') || '';
+  return raw.padStart(15, '0');
+}
+
+export async function nupayPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${NUPAY_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ auth: nupayAuth(), ...body }),
+  });
+
+  const text = await res.text();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error(`NuPay returned a non-JSON response (HTTP ${res.status}): ${text.slice(0, 500)}`);
+  }
+
+  if (!res.ok) {
+    throw new Error(`NuPay webservice error (HTTP ${res.status}): ${JSON.stringify(parsed)}`);
+  }
+
+  return parsed as T;
+}
+
+// ── Appendix 5.5 / 3.6 — Financial Institution ID ─────────────────────
+// Maps the bank names used in this app's loan application form to the
+// numeric Financial Institution ID NuPay requires in "debtorBankId".
+// Banks not present in the NuPay DebiCheck appendix (e.g. Investec) are
+// not supported for DebiCheck collection and resolve to `undefined`.
+export const FINANCIAL_INSTITUTION_ID: Record<string, string> = {
+  'Standard Bank': '1',
+  'Nedbank': '2',
+  'FNB': '3',
+  'African Bank': '7',
+  'Mercantile': '9',
+  'Capitec': '10',
+  'Ubank': '19',
+  'Absa': '16',
+  'Bidvest': '44',
+  'Finbond': '55',
+  'TymeBank': '61',
+  'Discovery Bank': '63',
+  'Old Mutual Bank': '67',
+};
+
+// ── Appendix 5.6 / 3.7 — Bank Universal Branch Codes ───────────────────
+export const UNIVERSAL_BRANCH_CODE: Record<string, string> = {
+  'Standard Bank': '051001',
+  'Nedbank': '198765',
+  'FNB': '250655',
+  'African Bank': '430000',
+  'Mercantile': '450105',
+  'Capitec': '470010',
+  'Ubank': '431010',
+  'Absa': '632005',
+  'Bidvest': '462005',
+  'Finbond': '589000',
+  'TymeBank': '678910',
+  'Discovery Bank': '679000',
+  'Old Mutual Bank': '352000',
+};
+
+// ── Appendix 5.4 / 3.5 — Account Type ──────────────────────────────────
+export function mapAccountType(type: string): string {
+  const map: Record<string, string> = {
+    cheque: '01',       // Current Account
+    current: '01',
+    savings: '02',
+    transmission: '03',
+  };
+  return map[type.toLowerCase()] || '01';
+}
+
+// ── Debit Value Type (Appendix 5.7 / 3.8) ──────────────────────────────
+export const DEBIT_VALUE_TYPE_FIXED = '1';
+
+// ── Entry Class (Appendix 5.8 / 7.5) ───────────────────────────────────
+// 0033 = Loan Repayment (other than Mortgage) — matches this product.
+export const ENTRY_CLASS_LOAN_REPAYMENT = '0033';
+
+// ── Mandate Cancellation Reason Codes (Appendix 3.11) ──────────────────
+export const CANCEL_REASON_MERCHANT_REQUESTED = 'MD17';
+
+// ── Frequency mapping ───────────────────────────────────────────────────
+// NuPay has no "once-off" frequency code; a single debit is modelled as a
+// 1-instalment mandate whose firstCollectionAmount/firstCollectionDate
+// carry the one debit (see Mandate Initiation spec §4.3, "Instalment amount").
+export type AppFrequency = 'once-off' | 'weekly' | 'monthly';
+
+export function mapFrequency(freq: AppFrequency): string {
+  const map: Record<AppFrequency, string> = {
+    'once-off': 'MNTH',
+    weekly: 'WEEK',
+    monthly: 'MNTH',
+  };
+  return map[freq] || 'MNTH';
+}
+
+// Derives a valid "collectionDay" for the given frequency code from the
+// first collection date, per Appendix 5.2 / 3.3.
+export function deriveCollectionDay(nuPayFrequency: string, isoDate: string): string {
+  const date = new Date(`${isoDate}T00:00:00Z`);
+  if (nuPayFrequency === 'WEEK') {
+    // 01 (Monday) .. 07 (Sunday)
+    const isoWeekday = date.getUTCDay() === 0 ? 7 : date.getUTCDay();
+    return String(isoWeekday).padStart(2, '0');
+  }
+  // MNTH / QURT / MIAN / YEAR: 01-30, or 99 for the last day of the month.
+  const day = date.getUTCDate();
+  const lastDayOfMonth = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+  if (day >= lastDayOfMonth) return '99';
+  return String(Math.min(day, 30)).padStart(2, '0');
+}
+
+// Formats a local SA mobile number (e.g. "0821234567") to the
+// international format NuPay requires (e.g. "+27821234567").
+export function formatDebtorPhone(mobile: string): string {
+  const digits = mobile.replace(/\D/g, '');
+  const national = digits.startsWith('0') ? digits.slice(1) : digits;
+  return `+27${national}`;
+}
+
+export function formatZarAmount(amount: number): string {
+  return amount.toFixed(2);
+}
+
+// ── Mandate Status Grouping (shared by Mandate Status & Mandate/Instalment
+// Reporting specs, appendix 6.4 / 7.6) — the authoritative way to collapse
+// NuPay's many granular statuses into this app's internal lifecycle states.
+export type InternalMandateStatus =
+  | 'draft' | 'mandate_submitted' | 'pending_bank' | 'accepted' | 'rejected' | 'cancelled' | 'error';
+
+const PENDING_STATUSES = new Set(['pending auth', 'posted', 'requested', 'queued', 'extracted']);
+const REJECTED_STATUSES = new Set(['expired', 'no response', 'not authorized', 'not authorised', 'rejected', 'cancelled', 'suspended']);
+const ACTIVE_STATUSES = new Set(['accepted', 'active', 'completed']);
+
+export function mapNuPayStatusGrouping(status: string, grouping?: string): InternalMandateStatus {
+  const normalizedStatus = (status || '').toLowerCase().trim();
+  const normalizedGrouping = (grouping || '').toLowerCase().trim();
+
+  // A mandate that was specifically cancelled should stay distinguishable
+  // from a generic rejection, even though NuPay groups it under "Rejected".
+  if (normalizedStatus === 'cancelled') return 'cancelled';
+
+  if (normalizedGrouping === 'pending' || PENDING_STATUSES.has(normalizedStatus)) return 'pending_bank';
+  if (normalizedGrouping === 'rejected' || REJECTED_STATUSES.has(normalizedStatus)) return 'rejected';
+  if (normalizedGrouping === 'active' || ACTIVE_STATUSES.has(normalizedStatus)) return 'accepted';
+
+  return 'pending_bank';
+}
+
+// ── Response code descriptions (trimmed to the most common outcomes) ──
+// Full tables are in the spec PDFs (DebiCheck Appendix 5.9/3.9/7.2 and
+// NuPay Appendix 5.10/3.10/7.1). Unknown codes fall back to the raw code.
+export const RESPONSE_CODE_DESCRIPTIONS: Record<string, string> = {
+  '900000': 'Transaction successful — mandate accepted / debit successful',
+  '900002': 'Insufficient funds',
+  '900003': 'Debits not allowed on this account',
+  '900004': 'Payment stopped by account holder',
+  '900005': 'Dormant/inactive account',
+  '900006': 'Account frozen',
+  '900008': 'Account in liquidation',
+  '900010': 'Account in sequestration',
+  '900012': 'Account closed',
+  '900018': 'Account holder deceased',
+  '900022': 'Account effects not cleared (insufficient funds, tracked)',
+  '900026': 'No such account',
+  '900040': 'Item limit exceeded',
+  '900044': 'Debtor bank system issue — no action needed, bank will respond once resolved',
+  '900048': 'Debtor account number fails CDV routine',
+  '900056': 'Not FICA compliant',
+  '900099': 'Held for representment (insufficient funds, in tracking)',
+  '902118': 'Debtor account is not open and active',
+  '902119': 'Unable to reach debtor for authentication',
+  '902126': 'Mandate is not in a status to be cancelled',
+  '902145': 'Mandate has expired',
+  '902146': 'Mandate initiation request has expired',
+  '902204': 'Mandate already exists',
+  '500000': 'Success',
+  '500002': 'Invalid inputs',
+  '500006': 'Internal web service error',
+  '500007': 'Internal error',
+  '500014': 'Contract reference needs to be unique',
+  '500015': 'Invalid amount format',
+  '500016': 'Invalid debtor phone number format',
+  '500017': 'Invalid debtor email address format',
+  '500018': 'Mandate not found',
+  '500019': 'Invalid amendment reason',
+  '500020': 'Invalid cancellation reason',
+  '500039': 'Mandate not found',
+  '500040': 'Change not applied',
+  '500080': 'Start date cannot be in the past',
+  '500089': 'Invalid number of instalments (maximum 9999)',
+};
+
+export function describeResponseCode(code: string | undefined | null): string | undefined {
+  if (!code) return undefined;
+  return RESPONSE_CODE_DESCRIPTIONS[code.trim()];
+}

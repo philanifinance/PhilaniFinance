@@ -1,14 +1,27 @@
 // Supabase Edge Function: NuPay DebiCheck Mandate Initiation
 // Deploy: supabase functions deploy nupay-initiate
 //
+// Implements the real NuPay "DebiCheck Mandate Initiation" webservice
+// (see NuPayment Integration/DebiCheck Mandate Initiation Specification_Version3.7.pdf).
+// POST https://btm.nupay.co.za/wsDebiCheck/mandate_initiation
+//
 // Required env vars (set via Supabase Dashboard → Edge Functions → Secrets):
-//   NUPAY_API_URL       — e.g. https://api.nupay.co.za/v1
-//   NUPAY_MERCHANT_ID   — Your NuPay Merchant ID
-//   NUPAY_TERMINAL_ID   — Your NuPay Terminal ID
-//   NUPAY_API_KEY       — Your NuPay API secret/key for JWT generation
+//   NUPAY_USERNAME            — NuPay merchant portal username
+//   NUPAY_PASSWORD            — NuPay merchant portal password
+//   NUPAY_MERCHANT_ID         — Your NuPay merchant number (card acceptor)
 //   SUPABASE_SERVICE_ROLE_KEY — Auto-injected by Supabase
+//
+// Note: NuPay's "auth" is a Base64("username:password") string sent as a
+// field inside the JSON body — there is no bearer-token auth endpoint and
+// no Terminal ID in this webservice.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  nupayPost, merchantNumber, mapAccountType, mapFrequency, deriveCollectionDay,
+  formatDebtorPhone, formatZarAmount, mapNuPayStatusGrouping, describeResponseCode,
+  FINANCIAL_INSTITUTION_ID, UNIVERSAL_BRANCH_CODE, DEBIT_VALUE_TYPE_FIXED,
+  ENTRY_CLASS_LOAN_REPAYMENT, type AppFrequency,
+} from '../_shared/nupay.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,11 +35,12 @@ interface MandateRow {
   debicheck_type: string;
   instalment_amount: number;
   num_instalments: number;
-  frequency: string;
+  frequency: AppFrequency;
   first_strike_date: string;
   tracking_days: number;
   client_name: string;
   client_id_number: string;
+  debtor_id_type: string;
   client_mobile: string;
   client_bank: string;
   client_account_number: string;
@@ -36,55 +50,20 @@ interface MandateRow {
   initiated_by: string;
 }
 
-// ── NuPay JWT Authentication ──────────────────────────────────────────
-async function getNuPayToken(): Promise<string> {
-  const merchantId = Deno.env.get('NUPAY_MERCHANT_ID') || '';
-  const terminalId = Deno.env.get('NUPAY_TERMINAL_ID') || '';
-  const apiKey = Deno.env.get('NUPAY_API_KEY') || '';
-  const apiUrl = Deno.env.get('NUPAY_API_URL') || 'https://api.nupay.co.za/v1';
-
-  const authResponse = await fetch(`${apiUrl}/auth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      MerchantID: merchantId,
-      TerminalID: terminalId,
-      APIKey: apiKey,
-    }),
-  });
-
-  if (!authResponse.ok) {
-    const errText = await authResponse.text();
-    throw new Error(`NuPay auth failed (${authResponse.status}): ${errText}`);
-  }
-
-  const authData = await authResponse.json();
-  return authData.Token || authData.token || '';
-}
-
-// ── Map frequency to NuPay schema ─────────────────────────────────────
-function mapFrequency(freq: string): string {
-  const map: Record<string, string> = {
-    'once-off': 'ONCE_OFF',
-    'weekly': 'WEEKLY',
-    'monthly': 'MONTHLY',
+interface InitiationResponse {
+  referenceNumbers?: {
+    mandateRequestTranId?: string;
+    clientReference?: string;
+    mandateID?: string;
+    contractReference?: string;
   };
-  return map[freq] || 'ONCE_OFF';
+  Channel?: string;
+  Status?: string;
+  ResultCode?: string;
+  Date?: string;
 }
 
-// ── Map account type ──────────────────────────────────────────────────
-function mapAccountType(type: string): string {
-  const map: Record<string, string> = {
-    'cheque': 'CHEQUE',
-    'savings': 'SAVINGS',
-    'transmission': 'TRANSMISSION',
-  };
-  return map[type.toLowerCase()] || 'CHEQUE';
-}
-
-// ── Main handler ──────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -98,12 +77,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create a Supabase client with service role to bypass RLS
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // 1. Fetch the mandate record
     const { data: mandate, error: fetchErr } = await supabase
       .from('debicheck_mandates')
       .select('*')
@@ -119,7 +96,6 @@ Deno.serve(async (req) => {
 
     const m = mandate as MandateRow;
 
-    // 2. Idempotency check — don't re-send if already submitted
     if (!['draft', 'error'].includes(m.status)) {
       return new Response(JSON.stringify({ error: `Mandate already in status: ${m.status}` }), {
         status: 409,
@@ -127,85 +103,94 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Authenticate with NuPay
-    const token = await getNuPayToken();
-
-    // 4. Build the NuPay DebiCheck payload
-    const apiUrl = Deno.env.get('NUPAY_API_URL') || 'https://api.nupay.co.za/v1';
-    const nuPayPayload = {
-      ContractRef: m.contract_ref,
-      MandateType: m.debicheck_type,                     // TT1 or TT2
-      DebtorName: m.client_name,
-      DebtorIDNumber: m.client_id_number,
-      DebtorContactNumber: m.client_mobile,
-      DebtorAccountNumber: m.client_account_number,
-      DebtorAccountType: mapAccountType(m.client_account_type),
-      DebtorBranchCode: m.client_branch_code,
-      InstalmentAmount: m.instalment_amount * 100,       // NuPay expects cents
-      NumberOfInstalments: m.num_instalments,
-      Frequency: mapFrequency(m.frequency),
-      FirstCollectionDate: m.first_strike_date,           // YYYY-MM-DD
-      TrackingDays: m.tracking_days,
-      // Creditor details are auto-filled from MerchantID on NuPay's side
-    };
-
-    // 5. Submit to NuPay
-    const nuPayResponse = await fetch(`${apiUrl}/debicheck/mandate/initiate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(nuPayPayload),
-    });
-
-    const nuPayResult = await nuPayResponse.json();
-
-    if (!nuPayResponse.ok) {
-      // NuPay returned an error
-      const errorMsg = nuPayResult.Message || nuPayResult.message || JSON.stringify(nuPayResult);
-      const responseCode = nuPayResult.ResponseCode || nuPayResult.responseCode || String(nuPayResponse.status);
-
+    const bankId = FINANCIAL_INSTITUTION_ID[m.client_bank];
+    if (!bankId) {
+      const message = `"${m.client_bank}" is not a DebiCheck-participating bank per NuPay's Financial Institution ID list.`;
       await supabase.from('debicheck_mandates').update({
         status: 'error',
-        nupay_response_code: responseCode,
-        nupay_response_message: errorMsg,
-        error_details: `HTTP ${nuPayResponse.status}: ${errorMsg}`,
+        error_details: message,
+        status_updated_at: new Date().toISOString(),
+      }).eq('id', m.id);
+      return new Response(JSON.stringify({ error: message }), {
+        status: 422,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const nuPayFrequency = mapFrequency(m.frequency);
+    const collectionDay = deriveCollectionDay(nuPayFrequency, m.first_strike_date);
+    const isRealTime = m.debicheck_type === 'TT1';
+
+    const payload = {
+      cardAcceptor: merchantNumber(),
+      frequency: nuPayFrequency,
+      collectionDay,
+      clientReference: m.contract_ref,
+      debtorName: m.client_name,
+      debtorIdType: m.debtor_id_type || '2',
+      debtorId: m.client_id_number,
+      debtorAccountNumber: m.client_account_number,
+      debtorAccountType: mapAccountType(m.client_account_type),
+      debtorBankId: bankId,
+      debtorBranchNumber: m.client_branch_code || UNIVERSAL_BRANCH_CODE[m.client_bank] || '',
+      debtorPhoneNumber: formatDebtorPhone(m.client_mobile),
+      debtorAuthenticationRequired: isRealTime ? '0230' : '0227',
+      firstCollectionAmount: formatZarAmount(m.instalment_amount),
+      firstCollectionDate: m.first_strike_date,
+      instalmentAmount: formatZarAmount(m.instalment_amount),
+      maxCollectionAmount: formatZarAmount(m.instalment_amount),
+      adjustmentCategory: 'N',
+      startDate: m.first_strike_date,
+      dateAdjustmentRule: 'Y',
+      debitValueTypeId: DEBIT_VALUE_TYPE_FIXED,
+      instalments: String(m.num_instalments),
+      trackingIndicator: String(m.tracking_days).padStart(2, '0'),
+      authenticationType: isRealTime ? 'REAL TIME' : 'BATCH',
+      entryClass: ENTRY_CLASS_LOAN_REPAYMENT,
+    };
+
+    let result: InitiationResponse;
+    try {
+      result = await nupayPost<InitiationResponse>('/mandate_initiation', payload);
+    } catch (apiErr) {
+      const message = apiErr instanceof Error ? apiErr.message : 'NuPay request failed';
+      await supabase.from('debicheck_mandates').update({
+        status: 'error',
+        error_details: message,
         status_updated_at: new Date().toISOString(),
       }).eq('id', m.id);
 
-      // Audit log
       await supabase.from('audit_logs').insert({
         actor_id: m.initiated_by,
         action: 'debicheck_api_error',
         target_type: 'debicheck_mandate',
         target_id: m.id,
-        details: { response_code: responseCode, message: errorMsg },
+        details: { error: message },
       });
 
-      const { data: updated } = await supabase
-        .from('debicheck_mandates').select('*').eq('id', m.id).single();
-
+      const { data: updated } = await supabase.from('debicheck_mandates').select('*').eq('id', m.id).single();
       return new Response(JSON.stringify(updated), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // 6. Success — update mandate record
-    const nupayMandateId = nuPayResult.MandateID || nuPayResult.mandateId || nuPayResult.ReferenceNumber || '';
-    const responseCode = nuPayResult.ResponseCode || nuPayResult.responseCode || '00';
-    const responseMessage = nuPayResult.Message || nuPayResult.message || 'Mandate submitted successfully';
+    const refs = result.referenceNumbers || {};
+    const internalStatus = mapNuPayStatusGrouping(result.Status || '');
+    const responseMessage = [result.Status, describeResponseCode(result.ResultCode)]
+      .filter(Boolean)
+      .join(' — ') || result.Status || '';
 
     await supabase.from('debicheck_mandates').update({
-      status: 'mandate_submitted',
-      nupay_mandate_id: nupayMandateId,
-      nupay_response_code: responseCode,
+      status: internalStatus,
+      nupay_mandate_id: refs.mandateID || null,
+      nupay_contract_reference: refs.contractReference || null,
+      nupay_mandate_request_tran_id: refs.mandateRequestTranId || null,
+      nupay_response_code: result.ResultCode || null,
       nupay_response_message: responseMessage,
       status_updated_at: new Date().toISOString(),
     }).eq('id', m.id);
 
-    // Audit log
     await supabase.from('audit_logs').insert({
       actor_id: m.initiated_by,
       action: 'debicheck_initiated',
@@ -213,17 +198,15 @@ Deno.serve(async (req) => {
       target_id: m.id,
       details: {
         contract_ref: m.contract_ref,
-        nupay_mandate_id: nupayMandateId,
-        response_code: responseCode,
+        nupay_mandate_id: refs.mandateID,
+        nupay_status: result.Status,
+        result_code: result.ResultCode,
         debicheck_type: m.debicheck_type,
         amount: m.instalment_amount,
       },
     });
 
-    // Return updated mandate
-    const { data: updated } = await supabase
-      .from('debicheck_mandates').select('*').eq('id', m.id).single();
-
+    const { data: updated } = await supabase.from('debicheck_mandates').select('*').eq('id', m.id).single();
     return new Response(JSON.stringify(updated), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

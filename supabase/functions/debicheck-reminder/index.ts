@@ -37,7 +37,9 @@ Deno.serve(async (req: Request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Find mandates that are 'sent' status and older than 2 hours
+    // Find mandates still awaiting debtor authentication (status 'pending_bank'
+    // — NuPay has accepted the request but the debtor hasn't approved it in
+    // their banking app yet) that are older than 2 hours.
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
     const { data: pendingMandates, error: queryErr } = await supabase
@@ -47,7 +49,7 @@ Deno.serve(async (req: Request) => {
         client_bank, instalment_amount, contract_ref, created_at,
         status
       `)
-      .eq('status', 'sent')
+      .eq('status', 'pending_bank')
       .lt('created_at', twoHoursAgo);
 
     if (queryErr) {

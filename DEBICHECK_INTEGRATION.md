@@ -1,5 +1,10 @@
 # DebiCheck Integration Guide
 
+> **⚠️ DEPRECATED:** This describes an assumed API shape (JWT auth, Terminal ID,
+> webhooks) that does not match NuPay's actual DebiCheck webservices. See
+> [`NUPAY_DEBICHECK_INTEGRATION.md`](./NUPAY_DEBICHECK_INTEGRATION.md) for the
+> corrected integration. Safe to delete this file.
+
 This document provides a comprehensive guide to the NuPay DebiCheck integration for PhilaniFinance.
 
 ## Overview

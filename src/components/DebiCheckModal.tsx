@@ -49,7 +49,9 @@ export interface MandateRecord {
 
 type ModalView = 'form' | 'submitting' | 'result';
 
-// ── SA Bank Branch Codes ─────────────────────────────────────────────
+// ── SA Bank Branch Codes (NuPay DebiCheck Universal Branch Codes) ────
+// Investec is deliberately absent: it does not appear in NuPay's
+// Financial Institution ID list and cannot take a DebiCheck mandate.
 const BRANCH_CODES: Record<string, string> = {
   'Standard Bank': '051001',
   'FNB':           '250655',
@@ -58,8 +60,9 @@ const BRANCH_CODES: Record<string, string> = {
   'Nedbank':       '198765',
   'TymeBank':      '678910',
   'African Bank':  '430000',
-  'Investec':      '580105',
 };
+
+const DEBICHECK_UNSUPPORTED_BANKS = new Set(['Investec']);
 
 // ── Mandate Status Config ─────────────────────────────────────────────
 const mandateStatusConfig: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
@@ -110,8 +113,10 @@ export default function DebiCheckModal({
   const [numInstalments, setNumInstalments] = useState(1);
   const [frequency, setFrequency] = useState('once-off');
   const [firstStrikeDate, setFirstStrikeDate] = useState(getDefaultStrikeDate(3));
-  const [trackingDays, setTrackingDays] = useState(10);
+  const [trackingDays, setTrackingDays] = useState(5);
   const [customBranchCode, setCustomBranchCode] = useState(branchCode);
+
+  const bankUnsupported = DEBICHECK_UNSUPPORTED_BANKS.has(app.bank_name);
 
   // UI state
   const [modalView, setModalView] = useState<ModalView>('form');
@@ -268,6 +273,15 @@ export default function DebiCheckModal({
           </div>
         )}
 
+        {/* ── UNSUPPORTED BANK WARNING ─────────────────────────────── */}
+        {bankUnsupported && (
+          <div className="mx-6 mt-4 p-4 rounded-xl border border-red-200 bg-red-50">
+            <p className="text-xs text-red-700 font-medium">
+              {app.bank_name} does not support NuPay DebiCheck mandates. A debit order cannot be initiated for this client's account.
+            </p>
+          </div>
+        )}
+
         {/* ── FORM VIEW ───────────────────────────────────────────── */}
         {modalView === 'form' && (
           <div className="p-6 space-y-6">
@@ -346,15 +360,17 @@ export default function DebiCheckModal({
                 <div>
                   <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1 block">Tracking Days</label>
                   <div className="flex gap-2">
-                    {[10, 32].map(d => (
+                    {[0, 5, 10].map(d => (
                       <button key={d} type="button" onClick={() => setTrackingDays(d)}
                         className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-all ${trackingDays === d ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-gray-600 hover:border-blue-400'}`}>
-                        {d} days
+                        {d === 0 ? 'None' : `${d} days`}
                       </button>
                     ))}
                   </div>
                   <p className="text-[10px] text-gray-400 mt-1">
-                    {trackingDays === 10 ? 'Standard: NuPay retries for 10 days if account has insufficient funds.' : 'Extended: NuPay retries for 32 days — use for salary-dependent clients.'}
+                    {trackingDays === 0
+                      ? 'No tracking: NuPay will not retry if the account has insufficient funds.'
+                      : `NuPay will retry for up to ${trackingDays} day${trackingDays === 1 ? '' : 's'} if the account has insufficient funds (maximum allowed by NuPay is 10).`}
                   </p>
                 </div>
               </div>
@@ -404,7 +420,7 @@ export default function DebiCheckModal({
                 Cancel
               </button>
               <button onClick={handleSubmit}
-                disabled={!!mandateBlocked || !customBranchCode || !firstStrikeDate || instalmentAmount <= 0}
+                disabled={!!mandateBlocked || bankUnsupported || !customBranchCode || !firstStrikeDate || instalmentAmount <= 0}
                 className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md hover:shadow-blue-500/20">
                 <Send className="w-4 h-4" /> Initiate DebiCheck
               </button>
@@ -423,8 +439,7 @@ export default function DebiCheckModal({
               Authenticating with NuPay and submitting mandate request...
             </p>
             <div className="mt-6 flex flex-col gap-2 text-xs text-gray-400">
-              <span>• Generating JWT authentication token</span>
-              <span>• Sending {debiCheckType} mandate to NuPay API</span>
+              <span>• Sending {debiCheckType} mandate to NuPay</span>
               <span>• Awaiting confirmation...</span>
             </div>
           </div>
