@@ -19,7 +19,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   nupayPost, merchantNumber, mapAccountType, mapFrequency, deriveCollectionDay,
   formatDebtorPhone, formatZarAmount, mapNuPayStatusGrouping, describeResponseCode,
-  FINANCIAL_INSTITUTION_ID, UNIVERSAL_BRANCH_CODE, DEBIT_VALUE_TYPE_FIXED,
+  isGatewayErrorCode, FINANCIAL_INSTITUTION_ID, UNIVERSAL_BRANCH_CODE, DEBIT_VALUE_TYPE_FIXED,
   ENTRY_CLASS_LOAN_REPAYMENT, type AppFrequency,
 } from '../_shared/nupay.ts';
 
@@ -54,13 +54,25 @@ interface InitiationResponse {
   referenceNumbers?: {
     mandateRequestTranId?: string;
     clientReference?: string;
+    // The spec's documented sample response shape uses "mandateID", but
+    // live error responses have been observed returning "mandate_id"
+    // instead — accept either.
     mandateID?: string;
+    mandate_id?: string;
     contractReference?: string;
   };
   Channel?: string;
   Status?: string;
   ResultCode?: string;
   Date?: string;
+}
+
+// A gateway error can still return a referenceNumbers block with a "0"
+// placeholder mandate_id — that's not a real NuPay mandate and must never
+// be persisted as one (status/cancellation lookups against it would fail).
+function extractMandateId(refs: NonNullable<InitiationResponse['referenceNumbers']> | undefined): string | null {
+  const raw = refs?.mandateID || refs?.mandate_id || '';
+  return raw && raw !== '0' ? raw : null;
 }
 
 Deno.serve(async (req) => {
@@ -176,18 +188,27 @@ Deno.serve(async (req) => {
     }
 
     const refs = result.referenceNumbers || {};
-    const internalStatus = mapNuPayStatusGrouping(result.Status || '');
+    const mandateId = extractMandateId(refs);
+    const gatewayError = isGatewayErrorCode(result.ResultCode);
+    const internalStatus = gatewayError ? 'error' : mapNuPayStatusGrouping(result.Status || '');
     const responseMessage = [result.Status, describeResponseCode(result.ResultCode)]
       .filter(Boolean)
       .join(' — ') || result.Status || '';
+    // 500xxx gateway errors ("Invalid Inputs" etc.) rarely explain which
+    // field was wrong — keep the full raw response so it's inspectable
+    // without needing to dig through edge function logs.
+    const errorDetails = gatewayError
+      ? `NuPay rejected the request (${result.ResultCode}): ${responseMessage}. Raw response: ${JSON.stringify(result)}`
+      : null;
 
     await supabase.from('debicheck_mandates').update({
       status: internalStatus,
-      nupay_mandate_id: refs.mandateID || null,
+      nupay_mandate_id: mandateId,
       nupay_contract_reference: refs.contractReference || null,
       nupay_mandate_request_tran_id: refs.mandateRequestTranId || null,
       nupay_response_code: result.ResultCode || null,
       nupay_response_message: responseMessage,
+      error_details: errorDetails,
       status_updated_at: new Date().toISOString(),
     }).eq('id', m.id);
 
@@ -198,11 +219,13 @@ Deno.serve(async (req) => {
       target_id: m.id,
       details: {
         contract_ref: m.contract_ref,
-        nupay_mandate_id: refs.mandateID,
+        nupay_mandate_id: mandateId,
         nupay_status: result.Status,
         result_code: result.ResultCode,
         debicheck_type: m.debicheck_type,
         amount: m.instalment_amount,
+        request_payload: payload,
+        raw_response: result,
       },
     });
 

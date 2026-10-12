@@ -15,7 +15,7 @@
 //   SUPABASE_SERVICE_ROLE_KEY — Auto-injected by Supabase
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { nupayPost, merchantNumber, mapNuPayStatusGrouping, describeResponseCode } from '../_shared/nupay.ts';
+import { nupayPost, merchantNumber, mapNuPayStatusGrouping, describeResponseCode, isGatewayErrorCode } from '../_shared/nupay.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -107,9 +107,26 @@ Deno.serve(async (req) => {
     }
 
     const nuPayStatus = result.mandate_status || '';
-    const internalStatus = mapNuPayStatusGrouping(nuPayStatus, result.mandateStatusGrouping);
     const reasonDescription = describeResponseCode(result.status_reason_code);
     const responseMessage = [nuPayStatus, reasonDescription].filter(Boolean).join(' — ') || nuPayStatus;
+
+    // A gateway error here (e.g. the lookup itself failed) carries no
+    // mandate_status at all — don't let an empty status silently flip the
+    // mandate back toward "pending_bank"; just report the lookup failure.
+    if (isGatewayErrorCode(result.status_reason_code) && !nuPayStatus) {
+      return new Response(
+        JSON.stringify({
+          mandate_id: m.id,
+          contract_ref: m.contract_ref,
+          status: m.status,
+          error: `NuPay status lookup failed: ${responseMessage || result.status_reason_code}`,
+          synced: false,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const internalStatus = mapNuPayStatusGrouping(nuPayStatus, result.mandateStatusGrouping);
 
     if (internalStatus !== m.status || result.status_reason_code) {
       await supabase.from('debicheck_mandates').update({

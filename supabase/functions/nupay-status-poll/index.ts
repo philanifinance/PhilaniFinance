@@ -29,7 +29,7 @@
 // SUPABASE_SERVICE_ROLE_KEY (auto-injected).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { nupayPost, merchantNumber, mapNuPayStatusGrouping, describeResponseCode } from '../_shared/nupay.ts';
+import { nupayPost, merchantNumber, mapNuPayStatusGrouping, describeResponseCode, isGatewayErrorCode } from '../_shared/nupay.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -93,6 +93,14 @@ Deno.serve(async (req) => {
         });
 
         const nuPayStatus = result.mandate_status || '';
+
+        // A gateway error (lookup itself failed) carries no mandate_status —
+        // skip rather than let an empty status flip things back to pending.
+        if (isGatewayErrorCode(result.status_reason_code) && !nuPayStatus) {
+          errors.push({ mandate_id: mandate.id, error: `Status lookup failed: ${result.status_reason_code}` });
+          continue;
+        }
+
         const internalStatus = mapNuPayStatusGrouping(nuPayStatus, result.mandateStatusGrouping);
 
         if (internalStatus !== mandate.status) {

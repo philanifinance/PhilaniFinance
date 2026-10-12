@@ -137,12 +137,19 @@ export function deriveCollectionDay(nuPayFrequency: string, isoDate: string): st
   return String(Math.min(day, 30)).padStart(2, '0');
 }
 
-// Formats a local SA mobile number (e.g. "0821234567") to the
-// international format NuPay requires (e.g. "+27821234567").
+// Formats a local SA mobile number (e.g. "0821234567") to the format NuPay
+// validates against (confirmed via live testing — NuPay error 500016
+// "Debtor phone number format" — to be "+27-821234567", a dash between the
+// country code and the 9-digit national number; the spec's own example,
+// "+27 -823509883", matches this once its stray OCR space is removed).
 export function formatDebtorPhone(mobile: string): string {
-  const digits = mobile.replace(/\D/g, '');
-  const national = digits.startsWith('0') ? digits.slice(1) : digits;
-  return `+27${national}`;
+  let digits = mobile.replace(/\D/g, '');
+  if (digits.startsWith('27') && digits.length === 11) {
+    digits = digits.slice(2);
+  } else if (digits.startsWith('0')) {
+    digits = digits.slice(1);
+  }
+  return `+27-${digits}`;
 }
 
 export function formatZarAmount(amount: number): string {
@@ -156,7 +163,7 @@ export type InternalMandateStatus =
   | 'draft' | 'mandate_submitted' | 'pending_bank' | 'accepted' | 'rejected' | 'cancelled' | 'error';
 
 const PENDING_STATUSES = new Set(['pending auth', 'posted', 'requested', 'queued', 'extracted']);
-const REJECTED_STATUSES = new Set(['expired', 'no response', 'not authorized', 'not authorised', 'rejected', 'cancelled', 'suspended']);
+const REJECTED_STATUSES = new Set(['expired', 'no response', 'not authorized', 'not authorised', 'rejected', 'cancelled', 'suspended', 'failed', 'declined']);
 const ACTIVE_STATUSES = new Set(['accepted', 'active', 'completed']);
 
 export function mapNuPayStatusGrouping(status: string, grouping?: string): InternalMandateStatus {
@@ -171,7 +178,26 @@ export function mapNuPayStatusGrouping(status: string, grouping?: string): Inter
   if (normalizedGrouping === 'rejected' || REJECTED_STATUSES.has(normalizedStatus)) return 'rejected';
   if (normalizedGrouping === 'active' || ACTIVE_STATUSES.has(normalizedStatus)) return 'accepted';
 
-  return 'pending_bank';
+  // Only truly ambiguous responses (no status, no grouping — e.g. an HTTP
+  // 200 with an empty/unexpected body) default to "pending": NuPay's own
+  // documented Status values are fully covered above, so anything else that
+  // actually came back non-empty (e.g. "Failed" from a gateway error) is
+  // closer to a rejection than a wait-and-see pending state.
+  if (!normalizedStatus && !normalizedGrouping) return 'pending_bank';
+  return 'rejected';
+}
+
+// ── NuPay/CAPI gateway-level error codes (Appendix 5.10 / 3.10 / 7.1) ──
+// These 500xxx codes mean the REQUEST itself was malformed/rejected before
+// it ever reached the bank — distinct from the 900xxx/901xxx/902xxx
+// DebiCheck response codes that describe an actual mandate/debit outcome.
+// A gateway error should map to this app's "error" bucket (our integration
+// sent something NuPay didn't accept), not "rejected" (bank/debtor declined
+// a validly-formed mandate).
+export function isGatewayErrorCode(code: string | undefined | null): boolean {
+  if (!code) return false;
+  const trimmed = code.trim();
+  return /^5\d{5}$/.test(trimmed) && trimmed !== '500000';
 }
 
 // ── Response code descriptions (trimmed to the most common outcomes) ──

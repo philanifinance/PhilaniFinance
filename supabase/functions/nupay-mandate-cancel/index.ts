@@ -10,7 +10,7 @@
 //   SUPABASE_SERVICE_ROLE_KEY — Auto-injected by Supabase
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { nupayPost, merchantNumber, describeResponseCode, mapNuPayStatusGrouping, CANCEL_REASON_MERCHANT_REQUESTED } from '../_shared/nupay.ts';
+import { nupayPost, merchantNumber, describeResponseCode, mapNuPayStatusGrouping, isGatewayErrorCode, CANCEL_REASON_MERCHANT_REQUESTED } from '../_shared/nupay.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -130,8 +130,9 @@ Deno.serve(async (req) => {
     // The cancellation webservice reuses the same Status vocabulary as
     // initiation (Accepted/Rejected/Pending Auth/Suspended/No Response) to
     // describe whether the CANCELLATION REQUEST was accepted — only a
-    // "Rejected" grouping means the cancellation itself didn't go through.
-    const cancelSucceeded = mapNuPayStatusGrouping(result.Status || '') !== 'rejected';
+    // "Rejected" grouping (or a 500xxx gateway error, meaning the request
+    // itself was malformed) means the cancellation didn't go through.
+    const cancelSucceeded = !isGatewayErrorCode(resultCode) && mapNuPayStatusGrouping(result.Status || '') !== 'rejected';
 
     if (!cancelSucceeded) {
       await supabase.from('audit_logs').insert({
@@ -139,7 +140,7 @@ Deno.serve(async (req) => {
         action: 'debicheck_cancel_error',
         target_type: 'debicheck_mandate',
         target_id: m.id,
-        details: { reason: reason || 'User cancelled', result_code: resultCode, response_message: responseMessage },
+        details: { reason: reason || 'User cancelled', result_code: resultCode, response_message: responseMessage, raw_response: result },
       });
 
       return new Response(
