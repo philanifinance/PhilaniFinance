@@ -13,6 +13,7 @@ import { logAudit } from '../lib/auditLog';
 import DebiCheckModal, { MandateStatusBadge, type MandateRecord } from './DebiCheckModal';
 import LoanContractModal, { type LoanContractRecord } from './LoanContractModal';
 import MandateManagementPanel from './MandateManagementPanel';
+import DebiCheckMandatesReport from './DebiCheckMandatesReport';
 
 // ── Types ────────────────────────────────────────────────────────────
 interface LoanApplication {
@@ -82,7 +83,7 @@ interface CreditCheckSummary {
   created_at?: string;
 }
 
-type ViewMode = 'queue' | 'detail';
+type ViewMode = 'queue' | 'detail' | 'mandates';
 type StatusFilter = 'all' | LoanApplication['status'] | 'open' | 'closed';
 
 // ── Config ───────────────────────────────────────────────────────────
@@ -642,6 +643,11 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
       setCreditCheckLoading(false);
     }
   }, [selectedApp]);
+
+  // ── DEBICHECK MANDATES REPORT VIEW ──────────────────────────────────
+  if (view === 'mandates') {
+    return <DebiCheckMandatesReport onBack={() => setView('queue')} />;
+  }
 
   // ── DETAIL VIEW ────────────────────────────────────────────────────
   if (view === 'detail' && selectedApp) {
@@ -1348,10 +1354,16 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                 <span className="text-brand-400">We Got You</span>
               </p>
             </div>
-            <button onClick={fetchApplications}
-              className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.1] text-white/70 hover:text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-white/[0.1] transition-all self-end">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-            </button>
+            <div className="flex items-center gap-2 self-end">
+              <button onClick={() => setView('mandates')}
+                className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.1] text-white/70 hover:text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-white/[0.1] transition-all">
+                <ShieldCheck className="w-4 h-4" /> DebiCheck Mandates
+              </button>
+              <button onClick={fetchApplications}
+                className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.1] text-white/70 hover:text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-white/[0.1] transition-all">
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              </button>
+            </div>
           </div>
           {/* Key metric chips */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

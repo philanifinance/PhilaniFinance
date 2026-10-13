@@ -14,7 +14,11 @@ import type { ToastMessage } from './Toast';
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-const SA_BANKS = ['Standard Bank', 'FNB', 'Absa', 'Capitec', 'Nedbank', 'TymeBank', 'African Bank', 'Investec'];
+// Investec is deliberately excluded: it does not appear in NuPay's DebiCheck
+// Financial Institution ID list, so a loan to an Investec account has no
+// working repayment-collection mechanism. Letting it through signup would
+// only let a client reach the disbursement stage before hitting that wall.
+const SA_BANKS = ['Standard Bank', 'FNB', 'Absa', 'Capitec', 'Nedbank', 'TymeBank', 'African Bank'];
 
 // Maps frontend category ids → DB category values
 const CATEGORY_DB_MAP: Record<string, string> = {

@@ -1,17 +1,18 @@
 // Supabase Edge Function: NuPay DebiCheck Status Poll (cron)
-// Deploy: supabase functions deploy nupay-status-poll
+// Deploy: supabase functions deploy nupay-status-poll --no-verify-jwt
 //
-// Schedule via Supabase Dashboard → Database → Cron Jobs:
+// Scheduled directly via pg_cron + pg_net (already set up in this project —
+// see migration 015). Deployed with --no-verify-jwt so pg_net's http_post
+// can call it with no Authorization header at all: there is no Postgres
+// setting that holds the service_role key by default, and this avoids
+// needing to paste the real secret into a SQL migration to fake one.
 //   SELECT cron.schedule(
 //     'nupay-status-poll',
 //     '*/15 * * * *',  -- Every 15 minutes
 //     $$
 //     SELECT net.http_post(
 //       url := '<your-project-url>/functions/v1/nupay-status-poll',
-//       headers := jsonb_build_object(
-//         'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key'),
-//         'Content-Type', 'application/json'
-//       ),
+//       headers := jsonb_build_object('Content-Type', 'application/json'),
 //       body := '{}'::jsonb
 //     );
 //     $$

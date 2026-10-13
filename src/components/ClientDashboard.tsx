@@ -9,6 +9,7 @@ import {
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useProfile, type ProfileData } from '../lib/ProfileContext';
+import { getProgressStep } from '../lib/applicationProgress';
 import LoanContractModal, { type LoanContractRecord } from './LoanContractModal';
 import ClientMandateStatus from './ClientMandateStatus';
 
@@ -132,27 +133,6 @@ function fmtBytes(b: number) {
   if (b < 1024) return b + ' B';
   if (b < 1024 * 1024) return (b / 1024).toFixed(0) + ' KB';
   return (b / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-function getProgressStep(
-  status: LoanApplication['status'],
-  lifecycle?: string | null,
-  contractStatus?: string,
-  mandateStatus?: string,
-): number {
-  if (status === 'pending') return 1;
-  if (status === 'under_review') return 2;
-  if (status === 'rejected') return 3;  // decision step, red
-  if (status === 'approved') {
-    if (!contractStatus || contractStatus === 'pending_signature') return 4;
-    if (contractStatus === 'signed') {
-      if (mandateStatus && ['mandate_submitted','pending_bank'].includes(mandateStatus)) return 5;
-      if (lifecycle === 'disbursed' || lifecycle === 'repaid') return 6;
-      return 5;
-    }
-    return 4;
-  }
-  return 3;
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -785,7 +765,8 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
 }
 
 // ── Profile Tab (editable) ───────────────────────────────────────────
-const SA_BANKS = ['Standard Bank', 'FNB', 'Absa', 'Capitec', 'Nedbank', 'TymeBank', 'African Bank', 'Investec'];
+// Investec excluded — see ApplicationForm.tsx for why (no NuPay DebiCheck support).
+const SA_BANKS = ['Standard Bank', 'FNB', 'Absa', 'Capitec', 'Nedbank', 'TymeBank', 'African Bank'];
 const PAY_DATES = ['1st', '15th', '20th', '25th', '26th', '27th', '28th', '29th', '30th', 'Last day of month', 'Weekly', 'Bi-weekly'];
 
 function ProfileTab({ profile, userEmail, updateProfile }: {

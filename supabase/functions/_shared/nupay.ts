@@ -156,6 +156,64 @@ export function formatZarAmount(amount: number): string {
   return amount.toFixed(2);
 }
 
+// ── Instalment Maintenance specific formatting ─────────────────────────
+// Unlike Mandate Initiation (decimal rand strings, e.g. "500.00"), the
+// Instalment Maintenance spec states amounts are in CENTS (e.g. 100 for
+// R1.00) and dates are plain YYYYMMDD with no dashes.
+export function randsToCents(amount: number): number {
+  return Math.round(amount * 100);
+}
+
+// Every rand-amount column touched by instalment data (debicheck_mandates,
+// debicheck_instalments) is INTEGER — whole rands only, matching the
+// convention used throughout this schema (e.g. loan_applications.loan_amount)
+// — so this rounds to the nearest whole rand rather than returning cents-
+// level decimal precision an INTEGER column can't actually store.
+export function centsToRands(cents: number): number {
+  return Math.round(cents / 100);
+}
+
+export function toCompactDate(isoDate: string): string {
+  return isoDate.replace(/-/g, '');
+}
+
+// ── Instalment status (Instalment Maintenance appendix 2.7) ───────────
+export type InstalmentStatus = 'pending' | 'collected' | 'failed' | 'waived' | 'cancelled';
+
+// Status vocabulary for the Instalment MAINTENANCE webservice's own
+// responses (add/maintain/reschedule/cancel/reactivate) — single letter
+// codes per its appendix 2.7.
+export function mapInstalmentStatus(code: string | undefined | null): InstalmentStatus {
+  switch ((code || '').trim().toUpperCase()) {
+    case 'X': return 'collected';
+    case 'H': return 'failed';
+    case 'I': return 'pending';   // in tracking — still being retried
+    case 'P': return 'pending';   // future
+    case 'C': return 'cancelled';
+    default: return 'pending';
+  }
+}
+
+// Status vocabulary for the Mandate and Instalment REPORTING webservice's
+// "status" field — a different, human-readable set of values ("Successful",
+// "Failed", "In Tracking", "Disputed", "Pending (Future)" per spec §6.3) and
+// NOT the single-letter codes above, despite both describing an instalment.
+// Matched by substring rather than exact value: a live response returned
+// "Cancelled", which isn't in the spec's own documented value list at all —
+// same lesson as elsewhere in this integration, the PDF isn't fully
+// reliable, so this degrades gracefully for any value we haven't seen yet.
+export function mapInstalmentReportStatus(status: string | undefined | null): InstalmentStatus {
+  const s = (status || '').toLowerCase();
+  if (s.includes('success')) return 'collected';
+  if (s.includes('cancel')) return 'cancelled';
+  if (s.includes('fail')) return 'failed';
+  // "Disputed" has no direct equivalent in this app's instalment status
+  // enum — treated as "failed" (a collection outcome needing attention)
+  // rather than invented as a new DB enum value.
+  if (s.includes('disput')) return 'failed';
+  return 'pending'; // "In Tracking", "Pending (Future)", or anything unrecognised
+}
+
 // ── Mandate Status Grouping (shared by Mandate Status & Mandate/Instalment
 // Reporting specs, appendix 6.4 / 7.6) — the authoritative way to collapse
 // NuPay's many granular statuses into this app's internal lifecycle states.
@@ -243,7 +301,6 @@ export const RESPONSE_CODE_DESCRIPTIONS: Record<string, string> = {
   '500080': 'Start date cannot be in the past',
   '500089': 'Invalid number of instalments (maximum 9999)',
   '500082': 'Collection amount limit exceeded',
-  '500016': 'Debtor phone number format',
   // Debtor-response outcomes (Mandate Status appendix 6.3 / Mandate
   // Initiation appendix 5.9) — these can also appear as the ErrorCode on a
   // nested ErrorMessage entry in an initiation response.

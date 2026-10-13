@@ -1,24 +1,25 @@
 // Supabase Edge Function: DebiCheck Reminder Cron
-// Deploy: npx supabase functions deploy debicheck-reminder
+// Deploy: npx supabase functions deploy debicheck-reminder --no-verify-jwt
 //
-// Schedule via Supabase Dashboard → Database → Cron Jobs:
+// Scheduled directly via pg_cron + pg_net (already set up in this project —
+// see migration 015). Deployed with --no-verify-jwt so pg_net's http_post
+// can call it with no Authorization header at all: there is no Postgres
+// setting that holds the service_role key by default, and this avoids
+// needing to paste the real secret into a SQL migration to fake one.
 //   SELECT cron.schedule(
 //     'debicheck-reminder',
 //     '*/30 * * * *',  -- Every 30 minutes
 //     $$
 //     SELECT net.http_post(
 //       url := 'https://wmpfweskrnliqwkqkpoq.supabase.co/functions/v1/debicheck-reminder',
-//       headers := jsonb_build_object(
-//         'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key'),
-//         'Content-Type', 'application/json'
-//       ),
+//       headers := jsonb_build_object('Content-Type', 'application/json'),
 //       body := '{}'::jsonb
 //     );
 //     $$
 //   );
 //
-// This function checks for DebiCheck mandates that have been in 'sent' status
-// for more than 2 hours without a reminder, then triggers reminder notifications.
+// This function checks for DebiCheck mandates that have been in 'pending_bank'
+// status for more than 2 hours without a reminder, then triggers reminder notifications.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
