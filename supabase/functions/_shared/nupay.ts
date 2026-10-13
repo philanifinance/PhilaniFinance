@@ -242,6 +242,14 @@ export const RESPONSE_CODE_DESCRIPTIONS: Record<string, string> = {
   '500040': 'Change not applied',
   '500080': 'Start date cannot be in the past',
   '500089': 'Invalid number of instalments (maximum 9999)',
+  '500082': 'Collection amount limit exceeded',
+  '500016': 'Debtor phone number format',
+  // Debtor-response outcomes (Mandate Status appendix 6.3 / Mandate
+  // Initiation appendix 5.9) — these can also appear as the ErrorCode on a
+  // nested ErrorMessage entry in an initiation response.
+  'AAUT': 'Debtor authenticated the mandate',
+  'NAUT': 'Debtor did not authenticate the mandate',
+  'NRSP': 'Debtor did not respond in time',
 };
 
 export function describeResponseCode(code: string | undefined | null): string | undefined {

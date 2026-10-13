@@ -125,8 +125,15 @@ export default function DebiCheckModal({
 
   const contractRef = useMemo(() => generateContractRef(app.id), [app.id]);
 
-  // Check if mandate already exists and is active
-  const mandateBlocked = existingMandate && !['rejected', 'cancelled', 'error'].includes(existingMandate.status);
+  // Check if mandate already exists and is active. "draft" is deliberately
+  // excluded: it's a local-only stub written just before calling NuPay, and
+  // only ever stays in that state if the NuPay call itself never completed
+  // (e.g. the browser closed or the network dropped mid-request) — not a
+  // real in-flight mandate. Treating it as blocking made a genuinely first
+  // attempt look like "already active" after any interrupted earlier try.
+  // This matches the "Initiate" button's own disabled check in
+  // AdminDashboard, which already excludes "draft" the same way.
+  const mandateBlocked = existingMandate && !['rejected', 'cancelled', 'error', 'draft'].includes(existingMandate.status);
 
   const handleSubmit = useCallback(async () => {
     if (mandateBlocked) return;

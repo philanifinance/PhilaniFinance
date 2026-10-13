@@ -282,13 +282,6 @@ export default function ClientMandateStatus({
         </div>
       )}
 
-      {mandate.error_details && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-          <p className="text-[10px] font-medium text-red-700 uppercase tracking-wide mb-1">Error Details</p>
-          <p className="text-xs text-red-600">{mandate.error_details}</p>
-        </div>
-      )}
-
       {/* Cancel confirmation */}
       {showCancelConfirm && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 space-y-3">

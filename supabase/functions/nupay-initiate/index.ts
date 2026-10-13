@@ -65,6 +65,14 @@ interface InitiationResponse {
   Status?: string;
   ResultCode?: string;
   Date?: string;
+  // Not documented in the spec's sample response shape, but observed on
+  // live responses — NuPay wraps BOTH a malformed request (e.g. bad phone
+  // format) and a genuine bank-level outcome (e.g. debtor didn't respond)
+  // under the same generic ResultCode 500002, with this array carrying the
+  // actual detail. ErrorSource "DB" means our own request was rejected
+  // before reaching the bank; any other source (a bank name, e.g. "Nedcor")
+  // means it reached the bank/debtor and this is a real mandate outcome.
+  ErrorMessage?: Array<{ ErrorSource?: string; ErrorCode?: string; ErrorMessage?: string; Date?: string }>;
 }
 
 // A gateway error can still return a referenceNumbers block with a "0"
@@ -189,16 +197,23 @@ Deno.serve(async (req) => {
 
     const refs = result.referenceNumbers || {};
     const mandateId = extractMandateId(refs);
-    const gatewayError = isGatewayErrorCode(result.ResultCode);
+    // NuPay wraps both a malformed request ("Debtor phone number format")
+    // and a genuine bank-level outcome ("Debtor did not respond in time")
+    // under the identical generic ResultCode 500002 — Status alone isn't
+    // reliable either ("Failed" and "No Response" both occur). The one
+    // dependable signal is whether a real mandate ID was ever issued: that
+    // only happens once the request has actually reached the bank, so a
+    // 500xxx code WITHOUT a real mandate ID means our own request was
+    // rejected before that point — a genuine integration error. A 500xxx
+    // code WITH a real mandate ID is a normal mandate-lifecycle outcome.
+    const errorEntry = result.ErrorMessage?.[0];
+    const gatewayError = isGatewayErrorCode(result.ResultCode) && !mandateId;
     const internalStatus = gatewayError ? 'error' : mapNuPayStatusGrouping(result.Status || '');
-    const responseMessage = [result.Status, describeResponseCode(result.ResultCode)]
-      .filter(Boolean)
-      .join(' — ') || result.Status || '';
-    // 500xxx gateway errors ("Invalid Inputs" etc.) rarely explain which
-    // field was wrong — keep the full raw response so it's inspectable
-    // without needing to dig through edge function logs.
+    const specificCode = errorEntry?.ErrorCode || result.ResultCode;
+    const specificMessage = errorEntry?.ErrorMessage || describeResponseCode(specificCode) || describeResponseCode(result.ResultCode);
+    const responseMessage = [result.Status, specificMessage].filter(Boolean).join(' — ') || result.Status || '';
     const errorDetails = gatewayError
-      ? `NuPay rejected the request (${result.ResultCode}): ${responseMessage}. Raw response: ${JSON.stringify(result)}`
+      ? `NuPay rejected the request${specificCode ? ` (${specificCode})` : ''}: ${specificMessage || 'Unknown error'}.`
       : null;
 
     await supabase.from('debicheck_mandates').update({
