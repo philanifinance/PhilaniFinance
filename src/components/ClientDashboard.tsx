@@ -173,7 +173,6 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
   const [contract, setContract] = useState<ContractInfo | null>(null);
   const [contractModalOpen, setContractModalOpen] = useState(false);
   const [fullContract, setFullContract] = useState<LoanContractRecord | null>(null);
-  const [lifecycle, setLifecycle] = useState<string | null>(null);
   const [userDocs, setUserDocs] = useState<AppDocument[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
 
@@ -187,28 +186,32 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
     const apps = (data as LoanApplication[]) || [];
     setApplications(apps);
 
-    // Fetch contract + mandate for the most active app
-    const active = apps.find(a => a.status === 'pending' || a.status === 'under_review' || a.status === 'approved') || apps[0];
-    if (active) {
+    // Fetch contract + mandate for the client's MOST RECENT application.
+    // Previously this picked the first app with status pending/under_review/
+    // approved, skipping over a newer rejected application (e.g. approved
+    // then rejected after its DebiCheck mandate failed) in favour of an
+    // older, already-closed-out approved/repaid loan — showing stale
+    // "fully repaid" info instead of the real rejection and its reason.
+    const latest = apps[0];
+    if (latest) {
       const [{ data: m }, { data: c }] = await Promise.all([
         supabase
           .from('debicheck_mandates')
           .select('*')
-          .eq('application_id', active.id)
+          .eq('application_id', latest.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
         supabase
           .from('loan_contracts')
           .select('id, status, contract_number, signed_at')
-          .eq('application_id', active.id)
+          .eq('application_id', latest.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
       ]);
       setMandate(m as MandateInfo | null);
       setContract(c as ContractInfo | null);
-      setLifecycle(active.loan_lifecycle ?? null);
     }
     setLoading(false);
   }, [user.id]);
@@ -228,10 +231,15 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
   // Lazy-load docs only when that tab is opened
   useEffect(() => { if (tab === 'documents') fetchUserDocs(); }, [tab, fetchUserDocs]);
 
-  const activeApp = applications.find(a => ['pending','under_review','approved'].includes(a.status)) || applications[0] || null;
+  // Always the client's most recent application — its true current status
+  // (including a rejection, even one that followed an earlier approval) is
+  // what the tracker should show, never an older unrelated application.
+  const activeApp = applications[0] || null;
 
-  // Disable new application while a loan is disbursed but not yet repaid
-  const hasActiveLoan = !!activeApp && (activeApp.loan_lifecycle === 'disbursed');
+  // Disable new application while ANY loan is disbursed but not yet repaid —
+  // checked across all applications, independent of which one is "active"
+  // for display purposes above.
+  const hasActiveLoan = applications.some(a => a.loan_lifecycle === 'disbursed');
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'tracker', label: 'Application Tracker', icon: FileText },
@@ -335,7 +343,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                   {/* Visual progress stepper */}
                   <div className="flex items-center justify-between mb-4">
                     {statusSteps.map((s, idx) => {
-                      const current = getProgressStep(activeApp.status, lifecycle, contract?.status, mandate?.status);
+                      const current = getProgressStep(activeApp.status, activeApp.loan_lifecycle, contract?.status, mandate?.status);
                       const isActive = idx + 1 <= current;
                       const isCurrent = idx + 1 === current;
                       const isDecisionStep = s.key === 'decision';
@@ -344,7 +352,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                       const isDebiWaiting = s.key === 'debicheck' && mandate && ['mandate_submitted','pending_bank'].includes(mandate.status);
                       const isContractPending = s.key === 'contract' && contract?.status === 'pending_signature';
                       const isDisbursedStep = s.key === 'disbursed';
-                      const isDisbursed = isDisbursedStep && (lifecycle === 'disbursed' || lifecycle === 'repaid');
+                      const isDisbursed = isDisbursedStep && (activeApp.loan_lifecycle === 'disbursed' || activeApp.loan_lifecycle === 'repaid');
 
                       let bgClass = 'bg-gray-100';
                       if (isRejected)   bgClass = 'bg-red-500';
@@ -379,7 +387,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                             {isContractPending && (
                               <span className="text-[10px] text-amber-600 font-medium animate-pulse">Action required</span>
                             )}
-                            {isDisbursed && lifecycle === 'repaid' && (
+                            {isDisbursed && activeApp.loan_lifecycle === 'repaid' && (
                               <span className="text-[10px] text-green-600 font-medium">Repaid</span>
                             )}
                           </div>
