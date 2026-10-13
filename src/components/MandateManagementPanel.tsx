@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   RefreshCw, Loader2, AlertCircle, CheckCircle, Ban,
   Calendar, DollarSign, Hash, Clock, Trash2, Eye
@@ -57,6 +57,15 @@ export default function MandateManagementPanel({
   const [cancelReason, setCancelReason] = useState('');
   const [syncMessage, setSyncMessage] = useState('');
   const [syncError, setSyncError] = useState('');
+
+  // See ClientMandateStatus for why: without this, the confirmation prompt
+  // can be left open asking for a cancellation reason even after the
+  // mandate has already moved to a terminal (non-cancellable) status.
+  useEffect(() => {
+    if (!mandate || !['mandate_submitted', 'pending_bank', 'accepted'].includes(mandate.status)) {
+      setShowCancelConfirm(false);
+    }
+  }, [mandate?.status]);
 
   const handleSyncStatus = useCallback(async () => {
     if (!mandate) return;
@@ -133,6 +142,8 @@ export default function MandateManagementPanel({
         await logAudit('mandate_cancelled_admin', 'debicheck_mandate', mandate.id, {
           reason: cancelReason || 'Cancelled by admin',
         });
+      } else {
+        setSyncError(data?.error || 'NuPay did not accept the cancellation. Please try again or contact support.');
       }
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Unknown error');

@@ -189,6 +189,34 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
 
   useEffect(() => { fetchApplications(); }, [fetchApplications]);
 
+  // ── Realtime: keep the main queue list in sync with client-side changes
+  // (new submissions, status/lifecycle changes) without a manual refresh.
+  // Scoped at the component level (not per-selectedApp) so it's live even
+  // while just browsing the queue.
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-loan-applications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'loan_applications' },
+        (payload) => {
+          const row = payload.new as LoanApplication;
+          setApplications(prev => prev.some(a => a.id === row.id) ? prev : [row, ...prev]);
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'loan_applications' },
+        (payload) => {
+          const row = payload.new as LoanApplication;
+          setApplications(prev => prev.map(a => a.id === row.id ? { ...a, ...row } : a));
+          setSelectedApp(prev => (prev && prev.id === row.id) ? { ...prev, ...row } : prev);
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   // ── Stats ──────────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const total      = applications.length;
@@ -357,26 +385,32 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
     setDetailLoading(false);
   }, []);
 
-  // ── Realtime: keep loanContract in sync when client signs ──────────
+  // ── Realtime: keep the open application's contract + DebiCheck mandate
+  // in sync when the client signs or authenticates, without needing to
+  // leave and re-open the application.
   useEffect(() => {
     if (!selectedApp) return;
+    const appId = selectedApp.id;
     const channel = supabase
-      .channel(`loan_contracts:${selectedApp.id}`)
+      .channel(`admin-application-detail-${appId}`)
       .on(
         'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'loan_contracts',
-          filter: `application_id=eq.${selectedApp.id}`,
-        },
-        (payload) => {
-          setLoanContract(payload.new as LoanContractRecord);
-        },
+        { event: 'UPDATE', schema: 'public', table: 'loan_contracts', filter: `application_id=eq.${appId}` },
+        (payload) => { setLoanContract(payload.new as LoanContractRecord); },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'debicheck_mandates', filter: `application_id=eq.${appId}` },
+        (payload) => { setMandate(payload.new as MandateRecord); },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'debicheck_mandates', filter: `application_id=eq.${appId}` },
+        (payload) => { setMandate(payload.new as MandateRecord); },
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [selectedApp]);
+  }, [selectedApp?.id]);
 
   const backToQueue = useCallback(() => {
     setView('queue');
@@ -997,16 +1031,31 @@ export default function AdminDashboard({ isOwner = false }: { isOwner?: boolean 
                   )}
 
                   <div className="space-y-3">
-                    {/* Mark as Paid / Disbursed */}
+                    {/* Mark as Paid / Disbursed — gated on the DebiCheck mandate
+                        actually being accepted by the debtor. Without a working
+                        collection mandate there's no way to recover the loan,
+                        so disbursement must wait for it rather than just a
+                        signed contract. */}
                     {(!selectedApp.loan_lifecycle || selectedApp.loan_lifecycle === 'approved') && (
-                      <button
-                        onClick={handleMarkDisbursed}
-                        disabled={disbursing}
-                        className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-100 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-all shadow-sm"
-                      >
-                        {disbursing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}
-                        {disbursing ? 'Processing…' : 'Mark as Paid / Disbursed'}
-                      </button>
+                      mandate?.status === 'accepted' ? (
+                        <button
+                          onClick={handleMarkDisbursed}
+                          disabled={disbursing}
+                          className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-100 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-all shadow-sm"
+                        >
+                          {disbursing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}
+                          {disbursing ? 'Processing…' : 'Mark as Paid / Disbursed'}
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
+                          <Clock className="w-4 h-4 flex-shrink-0" />
+                          {!mandate
+                            ? 'Initiate the NuPay DebiCheck mandate before disbursing funds.'
+                            : ['rejected', 'cancelled', 'error'].includes(mandate.status)
+                              ? 'The DebiCheck mandate was not accepted — resolve this before disbursing.'
+                              : 'Awaiting client approval of the DebiCheck mandate — disbursement unlocks once accepted.'}
+                        </div>
+                      )
                     )}
 
                     {/* Payment Received */}

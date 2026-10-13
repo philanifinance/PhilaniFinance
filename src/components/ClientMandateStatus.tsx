@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   RefreshCw, Loader2, AlertCircle, CheckCircle, Ban,
   Calendar, DollarSign, Hash, Clock, Trash2, Eye, Info
@@ -98,6 +98,16 @@ export default function ClientMandateStatus({
   const [syncMessage, setSyncMessage] = useState('');
   const [syncError, setSyncError] = useState('');
 
+  // If the mandate stops being cancellable for any reason — the cancellation
+  // just succeeded, or a status sync/poll picked up a terminal state while
+  // this confirmation happened to be open — the "cancel this mandate?"
+  // prompt must not be left stranded on screen still asking for it.
+  useEffect(() => {
+    if (!mandate || !['mandate_submitted', 'pending_bank', 'accepted'].includes(mandate.status)) {
+      setShowCancelConfirm(false);
+    }
+  }, [mandate?.status]);
+
   const handleSyncStatus = useCallback(async () => {
     if (!mandate) return;
 
@@ -165,6 +175,11 @@ export default function ClientMandateStatus({
             .single();
           if (updated) onMandateUpdate(updated as MandateRecord);
         }
+      } else {
+        // Previously fell through silently here, leaving the confirmation
+        // prompt open with no feedback — looked like it was stuck asking
+        // for cancellation again even after a "cancelled" status elsewhere.
+        setSyncError(data?.error || 'NuPay did not accept the cancellation. Please try again or contact support.');
       }
     } catch (err) {
       setSyncError('Unable to cancel mandate. Please contact support.');
