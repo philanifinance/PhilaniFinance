@@ -16,6 +16,7 @@ import ForbiddenPage from './components/ForbiddenPage';
 import ToastContainer, { type ToastMessage } from './components/Toast';
 import Loader from './components/Loader';
 import { useAdminAuth } from './lib/useAdminAuth';
+import { useHasActiveLoan } from './lib/useHasActiveLoan';
 import { ProfileProvider } from './lib/ProfileContext';
 
 type Page = 'home' | 'apply' | 'admin' | 'dashboard' | 'forbidden';
@@ -25,6 +26,8 @@ function AppInner() {
     user, loading, signIn, signUp, signOut,
     isAuthenticated, isAdmin, isOwner, role,
   } = useAdminAuth();
+
+  const { hasActiveLoan } = useHasActiveLoan(user);
 
   const [minLoadDone, setMinLoadDone] = useState(false);
   useEffect(() => { const t = setTimeout(() => setMinLoadDone(true), 2500); return () => clearTimeout(t); }, []);
@@ -81,10 +84,21 @@ function AppInner() {
     setAuthModalOpen(false);
   }, []);
 
+  // Single funnel for every "Apply" entry point (navbar, hero CTA, CTA
+  // banner, dashboard button) — a client with a disbursed-but-unpaid loan
+  // is redirected to their dashboard instead, where the blocked "New
+  // Application" button already explains why. Previously only the
+  // dashboard's own button checked this, so the navbar's "Apply Now" could
+  // bypass it entirely.
   const goToApply = useCallback(() => {
+    if (isAuthenticated && hasActiveLoan) {
+      setCurrentPage('dashboard');
+      window.scrollTo(0, 0);
+      return;
+    }
     setCurrentPage('apply');
     window.scrollTo(0, 0);
-  }, []);
+  }, [isAuthenticated, hasActiveLoan]);
 
   const goHome = useCallback(() => {
     setCurrentPage('home');
