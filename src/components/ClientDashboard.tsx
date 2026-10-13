@@ -53,8 +53,32 @@ interface AppDocument {
   created_at?: string;
 }
 
+// Must carry every field ClientMandateStatus renders (instalment_amount,
+// contract_ref, etc.) — previously only `status` was fetched here, so
+// ClientMandateStatus crashed calling `.toLocaleString()` on an undefined
+// instalment_amount for any client with an approved, signed-contract loan.
 interface MandateInfo {
+  id: string;
+  application_id: string;
+  contract_ref: string;
+  nupay_mandate_id: string | null;
+  debicheck_type: string;
+  instalment_amount: number;
+  num_instalments: number;
+  frequency: string;
+  first_strike_date: string;
+  tracking_days: number;
   status: string;
+  nupay_response_code: string | null;
+  nupay_response_message: string | null;
+  error_details: string | null;
+  initiated_at: string;
+  status_updated_at: string;
+  total_collected?: number;
+  total_failed?: number;
+  last_collection_date?: string;
+  next_collection_date?: string;
+  collections_count?: number;
 }
 
 interface ContractInfo {
@@ -169,7 +193,7 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
       const [{ data: m }, { data: c }] = await Promise.all([
         supabase
           .from('debicheck_mandates')
-          .select('status')
+          .select('*')
           .eq('application_id', active.id)
           .order('created_at', { ascending: false })
           .limit(1)

@@ -224,7 +224,7 @@ export default function ClientMandateStatus({
       <div className="grid grid-cols-2 gap-3 bg-slate-50 rounded-xl p-4 mb-4">
         <div>
           <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-1">Amount</p>
-          <p className="text-sm font-semibold text-navy-900">R {mandate.instalment_amount.toLocaleString('en-ZA')}</p>
+          <p className="text-sm font-semibold text-navy-900">R {(mandate.instalment_amount ?? 0).toLocaleString('en-ZA')}</p>
         </div>
         <div>
           <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-1">Frequency</p>
