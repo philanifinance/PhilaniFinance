@@ -84,12 +84,25 @@ const statusConfig: Record<LoanApplication['status'], { label: string; color: st
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────
-function fmtZar(n: number) { return 'R ' + n.toLocaleString('en-ZA'); }
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+// Defensive against null/undefined/invalid values from the database —
+// a single bad record here used to blank the entire dashboard, since
+// `null.toLocaleString()` or `new Date(null)` throw during render and
+// there was no error boundary to contain it.
+function fmtZar(n: number | null | undefined) {
+  if (n === null || n === undefined || Number.isNaN(n)) return 'R 0';
+  return 'R ' + n.toLocaleString('en-ZA');
 }
-function fmtDateTime(iso: string) {
-  return new Date(iso).toLocaleString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function fmtDate(iso: string | null | undefined) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function fmtDateTime(iso: string | null | undefined) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 function fmtBytes(b: number) {
   if (b < 1024) return b + ' B';
@@ -462,7 +475,12 @@ export default function ClientDashboard({ user, onApply, showWelcome, onWelcomeD
                       <div className="bg-white rounded-xl p-4 border border-emerald-100">
                         <p className="text-xs text-gray-500 mb-1">Repayment Due</p>
                         <p className="font-bold text-gray-900">
-                          {fmtDate((() => { const d = new Date(activeApp.loan_disbursed_at!); d.setDate(d.getDate() + activeApp.loan_term_days); return d.toISOString(); })())}
+                          {fmtDate((() => {
+                            const d = new Date(activeApp.loan_disbursed_at!);
+                            if (Number.isNaN(d.getTime())) return null;
+                            d.setDate(d.getDate() + (activeApp.loan_term_days || 0));
+                            return d.toISOString();
+                          })())}
                         </p>
                       </div>
                       <div className="bg-white rounded-xl p-4 border border-emerald-100">

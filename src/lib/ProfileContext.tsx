@@ -109,7 +109,9 @@ export function ProfileProvider({ user, children }: Props) {
       const p = rowToProfile(appRow, fallbackEmail);
       setProfile(p);
       // Also seed the profiles table so future loads are faster
-      await supabase.from('profiles').update({
+      // Use upsert to handle both INSERT and UPDATE cases
+      const { error: upsertError } = await supabase.from('profiles').upsert({
+        id: user.id,
         first_name: p.firstName,
         last_name: p.lastName,
         id_number: p.idNumber,
@@ -122,7 +124,11 @@ export function ProfileProvider({ user, children }: Props) {
         account_number: p.accountNumber,
         account_type: p.accountType,
         updated_at: new Date().toISOString(),
-      }).eq('id', user.id);
+      });
+      
+      if (upsertError) {
+        console.error('Failed to seed profile from application:', upsertError.message);
+      }
     } else {
       setProfile({ ...emptyProfile, email: fallbackEmail });
     }
